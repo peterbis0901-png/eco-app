@@ -1,9 +1,9 @@
 {
-  "name": "green-command-system",
+  "name": "eco-system-central-operations",
   "version": "3.5.0",
-  "main": "gemini-code-1780586650289.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node gemini-code-1780586650289.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "express": "^4.19.2",
