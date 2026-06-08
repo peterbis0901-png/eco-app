@@ -1,6 +1,6 @@
 /**
- * 🌱 ECOCONNECT HCM - PRODUCTION READY V1.0.1 (FIXED SYNTAX)
- * - Sửa triệt để lỗi cú pháp thoát chuỗi (Escape Sequence) ở phiên bản trước.
+ * 🌱 ECOCONNECT HCM - PRODUCTION READY V1.0.2 (HOTFIXED)
+ * - Sửa triệt để lỗi gõ nhầm ký tự hệ thống \frac tại tab Lịch trình.
  * - Đồng bộ hệ thống từ điển cho toàn bộ 12 trang tính năng.
  * - Design System: Tông Emerald/Teal chủ đạo sang xịn mịn.
  */
@@ -88,7 +88,6 @@ app.get('/', (req, res) => {
             <div id="root"></div>
 
             <script type="text/babel">
-                // 🌐 Khắc phục hệ thống khóa ngôn ngữ khớp chuẩn Tab định tuyến
                 const langPack = {
                     vi: { welcome: "Chào mừng bạn", appName: "EcoConnect HCM", home: "Trang chủ", report: "Bản đồ & Báo cáo", community: "Cộng đồng", chat: "Chat nhóm", news: "Tin tức & Mẹo", tracking: "Theo dõi", admin: "Kiểm duyệt", stats: "Thống kê", schedule: "Lịch trình", tips: "Mẹo sống xanh", permission: "Xin cấp phép", menu: "Hồ sơ" },
                     en: { welcome: "Welcome", appName: "EcoConnect HCM", home: "Home", report: "Map & Report", community: "Community", chat: "Chat Room", news: "News & Tips", tracking: "Tracking", admin: "Approval", stats: "Statistics", schedule: "Schedule", tips: "Green Tips", permission: "Permissions", menu: "Profile" },
@@ -244,8 +243,6 @@ app.get('/', (req, res) => {
                                         <button type="button" onClick={() => setCurrentTab('tracking')} className={\`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition \${currentTab === 'tracking' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:bg-slate-800'}\`}><span className="material-icons-round text-lg">analytics</span> {t.tracking}</button>
                                         <button type="button" onClick={() => setCurrentTab('stats')} className={\`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition \${currentTab === 'stats' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:bg-slate-800'}\`}><span className="material-icons-round text-lg">bar_chart</span> {t.stats}</button>
                                         <button type="button" onClick={() => setCurrentTab('schedule')} className={\`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition \${currentTab === 'schedule' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:bg-slate-800'}\`}><span className="material-icons-round text-lg">calendar_month</span> {t.schedule}</button>
-                                        
-                                        {/* Đã xóa hoàn toàn ký tự lỗi \./tips ở dòng dưới */}
                                         <button type="button" onClick={() => setCurrentTab('tips')} className={\`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition \${currentTab === 'tips' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:bg-slate-800'}\`}><span className="material-icons-round text-lg">tips_and_updates</span> {t.tips}</button>
                                         
                                         {user.role === 'Official' && (
@@ -656,7 +653,8 @@ app.get('/', (req, res) => {
                                             </div>
                                             <div className="grid grid-cols-7 gap-2 h-40 text-left">
                                                 {Array.from({length: 28}).map((_, i) => (
-                                                    <div key={i} className={\`p-1.5 bg-slate-900/60 rounded-lg border border-slate-800 flex flex-col justify-between \frac{i+1 === 15 ? 'border-emerald-500/60 bg-emerald-950/20' : ''}\`}>
+                                                    /* 🌟 ĐÃ HOTFIX: Sửa đổi hoàn toàn \frac{ thành \${ đúng chuẩn JavaScript Template Literals */
+                                                    <div key={i} className={\`p-1.5 bg-slate-900/60 rounded-lg border border-slate-800 flex flex-col justify-between \${i+1 === 15 ? 'border-emerald-500/60 bg-emerald-950/20' : ''}\`}>
                                                         <span className="text-[10px] text-slate-500 font-mono">{i+1}</span>
                                                         {i+1 === 15 && <span className="w-2 h-2 rounded-full bg-emerald-400 block mx-auto shadow-emerald-500 shadow"></span>}
                                                     </div>
@@ -779,7 +777,7 @@ app.get('/', (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`====================================================================`);
-    console.log(` 🌱 ECOCONNECT HCM - FIXED PRODUCTION V1.0.1 READY`);
+    console.log(` 🌱 ECOCONNECT HCM - FIXED PRODUCTION V1.0.2 READY`);
     console.log(` 🚀 ĐƯỜNG DẪN KIỂM TRA LOCALHOST: http://localhost:${PORT}`);
     console.log(`====================================================================`);
 });
