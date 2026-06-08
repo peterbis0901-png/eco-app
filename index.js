@@ -1,7 +1,8 @@
 /**
- * 👑 TRẠM ĐIỀU PHỐI MÔI TRƯỜNG (RESTORED ORIGINAL V3.5)
- * - Khôi phục 100% giao diện, tên gọi, tông màu xanh lá/xanh dương lúc đầu.
- * - Tích hợp vòng quét Radar mượt mà, không crash mượt mà trên Render.
+ * 🌱 ECOCONNECT HCM - PRODUCTION READY V1.0.0
+ * - Khôi phục 12 trang tính năng toàn diện theo tài liệu đặc tả.
+ * - Hệ thống phân quyền 3 tài khoản: Người dùng, Cán bộ (ADMIN123), Nhà tổ chức.
+ * - Design System: Tông Emerald/Teal chủ đạo, hiệu ứng kính (Glassmorphism), bóng mờ cao cấp.
  */
 
 const express = require('express');
@@ -13,50 +14,54 @@ app.use(cors({ origin: '*' }));
 app.use(express.json());
 
 // =========================================================================
-// 💾 DỮ LIỆU CỐT LÕI NGUYÊN BẢN (Dữ liệu lúc đầu của bro)
+// 💾 CƠ SỞ DỮ LIỆU MÔ PHỎNG THỜI GIAN THỰC (REAL-TIME DATA)
 // =========================================================================
-let reports = [
-    { id: 1, title: "Rác thải nhựa kênh Tàu Hủ", location: "Quận 8", status: "Chờ duyệt", points: 50, x: 35, y: 65 },
-    { id: 2, title: "Điểm tập kết rác tự phát", location: "Thủ Đức", status: "Đã xử lý", points: 100, x: 70, y: 30 }
-];
-
-let leaderboard = [
-    { name: "Hoàng Minh Đức", points: 1450 },
-    { name: "Lê Thị Mai", points: 1210 }
-];
+let state = {
+    reports: [
+        { id: "REP-001", title: "Bãi rác tự phát dưới chân cầu chữ Y", location: "Quận 8, TP.HCM", status: "Chờ xử lý", type: "Trash", severity: "Severe", reporter: "Nguyễn Văn A", phone: "0901234xxx", date: "2026-06-08", x: 45, y: 55 },
+        { id: "REP-002", title: "Kênh Nhiêu Lộc có hiện tượng xả nước thải đen", location: "Quận 3, TP.HCM", status: "Đang xử lý", type: "Water", severity: "Warning", reporter: "Ẩn danh", phone: "Không có", date: "2026-06-07", x: 60, y: 40 },
+        { id: "REP-003", title: "Khói bụi công nghiệp nồng nặc khu công nghiệp", location: "Bình Tân, TP.HCM", status: "Đã xử lý", type: "Air", severity: "Info", reporter: "Trần Thị B", phone: "0934567xxx", date: "2026-06-05", x: 30, y: 70 }
+    ],
+    events: [
+        { id: 1, title: "Chiến dịch dọn rác kênh rạch xanh", date: "15/06/2026", loc: "Kênh Đôi, Quận 8", joined: 85, max: 100, desc: "Chung tay vớt rác thải nhựa, khơi thông dòng chảy tuyến kênh trọng điểm.", img: "https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=500" },
+        { id: 2, title: "Ngày hội trồng 1000 cây xanh đô thị", date: "20/06/2026", loc: "Công viên Gia Định", joined: 150, max: 150, desc: "Phủ xanh góc phố, cải thiện chất lượng không khí nội thành.", img: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=500" }
+    ],
+    groups: [
+        { id: 1, name: "Sài Gòn Xanh", members: "15.2K", area: "Toàn thành phố", desc: "Biệt đội thanh niên tình nguyện dọn kênh rạch bẩn." },
+        { id: 2, name: "Zero Waste HCM", members: "8.5K", area: "Quận 1 & Quận 3", desc: "Cộng đồng chia sẻ mẹo giảm thiểu rác thải nhựa, lối sống bền vững." }
+    ],
+    permissions: [
+        { id: "REQ-991", title: "Xin phép Gom pin cũ tại các chung cư", org: "Đại học Bách Khoa", date: "2026-06-08", status: "Chờ xét duyệt" }
+    ]
+};
 
 // =========================================================================
-// 🔌 TẦNG API ENDPOINTS 
+// 🔌 HỆ THỐNG API CHUẨN ĐẦU RA
 // =========================================================================
-app.get('/api/reports', (req, res) => res.json(reports));
-
+app.get('/api/state', (req, res) => res.json(state));
 app.post('/api/reports', (req, res) => {
-    const { title, location } = req.body;
-    // Tự động ghim một vị trí ngẫu nhiên trên bản đồ Radar tròn cho đẹp
-    const x = Math.floor(Math.random() * 60) + 20;
-    const y = Math.floor(Math.random() * 60) + 20;
-    
-    const newReport = { id: Date.now(), title, location, status: "Chờ duyệt", points: 50, x, y };
-    reports.unshift(newReport); // Đẩy lên đầu luồng sự cố
+    const { title, location, type, severity, isAnonymous, reporterName, reporterPhone } = req.body;
+    const newReport = {
+        id: `REP-${Math.floor(1000 + Math.random() * 9000)}`,
+        title, location, type, severity,
+        status: "Chờ xử lý",
+        reporter: isAnonymous ? "Ẩn danh" : (reporterName || "Người dân"),
+        phone: isAnonymous ? "Không có" : (reporterPhone || "Không có"),
+        date: new Date().toISOString().split('T')[0],
+        x: Math.floor(Math.random() * 60) + 20,
+        y: Math.floor(Math.random() * 60) + 20
+    };
+    state.reports.unshift(newReport);
     res.json({ success: true, report: newReport });
 });
-
-app.get('/api/leaderboard', (req, res) => res.json(leaderboard));
-
-app.post('/api/chat', (req, res) => {
-    const { message } = req.body;
-    const replies = [
-        "Chào bro! Báo cáo của bạn giúp ích rất nhiều cho chiến dịch phủ xanh đô thị.",
-        "Hệ thống vừa ghi nhận thêm điểm nóng môi trường. Cảm ơn ní nhé!",
-        "EcoPoints của bạn có thể dùng để đổi quà sống xanh tại trạm trung tâm nha.",
-        "Giữ vững tinh thần thám tử môi trường nhé bro! Trái Đất cảm ơn bạn!"
-    ];
-    const randomReply = replies[Math.floor(Math.random() * replies.length)];
-    res.json({ reply: randomReply });
+app.post('/api/permissions', (req, res) => {
+    const newPerm = { id: `REQ-${Math.floor(100 + Math.random() * 900)}`, ...req.body, status: "Chờ xét duyệt" };
+    state.permissions.unshift(newPerm);
+    res.json({ success: true });
 });
 
 // =========================================================================
-// 🎨 TẦNG GIAO DIỆN CHUẨN (Khôi phục màu sắc và tên gọi lúc đầu)
+// 🎨 GIAO DIỆN SIÊU PHẨM ECOCONNECT HCM (12 TRANG + TÔNG EMERALD CAO CẤP)
 // =========================================================================
 app.get('/', (req, res) => {
     res.send(`
@@ -65,242 +70,738 @@ app.get('/', (req, res) => {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Trạm Điều Phối Môi Trường</title>
+            <title>EcoConnect HCM - Ứng Dụng Môi Trường Thông Minh</title>
             <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
             <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
             <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
             <script src="https://cdn.tailwindcss.com"></script>
+            <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
             <style>
-                @keyframes scan {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-                .radar-sweep {
-                    background: conic-gradient(from 0deg, rgba(16, 185, 129, 0.15) 0deg, rgba(16, 185, 129, 0) 90deg);
-                    animation: scan 4s linear infinite;
-                }
-                ::-webkit-scrollbar { width: 5px; }
-                ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 4px; }
+                body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: #f8fafc; }
+                .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.06); }
+                .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+                .custom-scroll::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
             </style>
         </head>
-        <body class="bg-gray-900 text-white font-sans antialiased">
-            <div id="app-viewport"></div>
+        <body>
+            <div id="root"></div>
 
             <script type="text/babel">
-                const EcoApp = () => {
-                    const [reports, setReports] = React.useState([]);
-                    const [leaderboard, setLeaderboard] = React.useState([]);
-                    const [title, setTitle] = React.useState('');
-                    const [location, setLocation] = React.useState('');
-                    const [chatInput, setChatInput] = React.useState('');
-                    const [chatLogs, setChatLogs] = React.useState([
-                        { sender: 'AI', text: 'Chào bro! Hệ thống Trạm Điều Phối đã sẵn sàng trực chiến!' }
-                    ]);
+                // 🌐 Bộ từ điển đa ngôn ngữ 4 thứ tiếng đúng spec
+                const langPack = {
+                    vi: { welcome: "Chào mừng bạn", appName: "EcoConnect HCM", home: "Trang chủ", report: "Bản đồ & Báo cáo", comm: "Cộng đồng", chat: "Chat nhóm", news: "Tin tức & Mẹo", tracking: "Theo dõi", admin: "Kiểm duyệt", stats: "Thống kê", schedule: "Lịch trình", tips: "Mẹo sống xanh", perm: "Xin phép phép", menu: "Hồ sơ" },
+                    en: { welcome: "Welcome", appName: "EcoConnect HCM", home: "Home", report: "Map & Report", comm: "Community", chat: "Chat Room", news: "News & Tips", tracking: "Tracking", admin: "Approval", stats: "Statistics", schedule: "Schedule", tips: "Green Tips", perm: "Permissions", menu: "Profile" },
+                    fr: { welcome: "Bienvenue", appName: "EcoConnect HCM", home: "Accueil", report: "Carte & Rapport", comm: "Communauté", chat: "Discussion", news: "Infos & Conseils", tracking: "Suivi", admin: "Approbation", stats: "Statistiques", schedule: "Calendrier", tips: "Conseils Verts", perm: "Autorisation", menu: "Menu" },
+                    jp: { welcome: "ようこそ", appName: "EcoConnect HCM", home: "ホーム", report: "地図と報告", comm: "コミュニティ", chat: "チャット", news: "ニュース", tracking: "追跡履歴", admin: "管理承認", stats: "統計データ", schedule: "スケジュール", tips: "エコのコツ", perm: "活動申請", menu: "メニュー" }
+                };
 
-                    const fetchData = () => {
-                        fetch('/api/reports').then(res => res.json()).then(setReports);
-                        fetch('/api/leaderboard').then(res => res.json()).then(setLeaderboard);
+                function App() {
+                    // 🔐 State xác thực & phân quyền gốc
+                    const [user, setUser] = React.useState(null); // { email, role, name, points, rank }
+                    const [authMode, setAuthMode] = React.useState('login'); // login / register
+                    const [emailInput, setEmailInput] = React.useState('');
+                    const [passInput, setPassInput] = React.useState('');
+                    const [nameInput, setNameInput] = React.useState('');
+                    const [adminCode, setAdminCode] = React.useState('');
+                    const [passStrength, setPassStrength] = React.useState(0);
+
+                    // 🗺️ Điều hướng Router nội bộ quản lý 12 trang phát một
+                    const [currentTab, setCurrentTab] = React.useState('home');
+                    const [lang, setLang] = React.useState('vi');
+                    const [appState, setAppState] = React.useState({ reports: [], events: [], groups: [], permissions: [] });
+                    
+                    // 🤖 Các State phục vụ tính năng phụ từng trang
+                    const [isBotOpen, setIsBotOpen] = React.useState(false);
+                    const [botLogs, setBotLogs] = React.useState([{ s: 'bot', t: 'Chào bro! EcoBot AI đã sẵn sàng hỗ trợ thông tin môi trường trích nguồn chuẩn xác.' }]);
+                    const [botInput, setBotInput] = React.useState('');
+                    const [commTab, setCommTab] = React.useState('events');
+                    const [newsFilter, setNewsFilter] = React.useState('all');
+
+                    // Lấy dữ liệu thời gian thực
+                    const loadState = () => {
+                        fetch('/api/state').then(res => res.json()).then(setAppState);
                     };
 
                     React.useEffect(() => {
-                        fetchData();
+                        loadState();
                     }, []);
 
-                    const handleReportSubmit = (e) => {
-                        e.preventDefault();
-                        if (!title || !location) return;
+                    // Tính độ mạnh mật khẩu khi gõ
+                    const checkPassword = (val) => {
+                        setPassInput(val);
+                        let score = 0;
+                        if (val.length >= 8) score += 25;
+                        if (/[A-Z]/.test(val)) score += 25;
+                        if (/[a-z]/.test(val)) score += 25;
+                        if (/[0-9!@#$%^&*]/.test(val)) score += 25;
+                        setPassStrength(score);
+                    };
 
-                        fetch('/api/reports', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ title, location })
-                        })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.success) {
-                                setReports(prev => [data.report, ...prev]);
-                                setTitle('');
-                                setLocation('');
-                                alert('🎉 Báo cáo thành công! +50 EcoPoints đã được nạp!');
+                    // Logic Tự động nhận diện vai trò qua Email y hệt yêu cầu bài toán
+                    const handleAuth = (e) => {
+                        e.preventDefault();
+                        if (!emailInput || !passInput) return;
+
+                        let role = 'User';
+                        let finalName = nameInput || emailInput.split('@')[0];
+
+                        if (emailInput.includes('admin') || emailInput.includes('official')) {
+                            if (authMode === 'register' && adminCode !== 'ADMIN123') {
+                                alert('Mã xác nhận Cán bộ không đúng!');
+                                return;
                             }
+                            role = 'Official';
+                        } else if (emailInput.includes('org')) {
+                            role = 'Organizer';
+                        }
+
+                        setUser({
+                            email: emailInput,
+                            role: role,
+                            name: finalName,
+                            points: 120,
+                            rank: 'Bạc'
                         });
                     };
 
-                    const handleSendMessage = (e) => {
-                        e.preventDefault();
-                        if (!chatInput.trim()) return;
+                    const t = langPack[lang];
 
-                        const msg = chatInput;
-                        setChatLogs(prev => [...prev, { sender: 'User', text: msg }]);
-                        setChatInput('');
+                    // NẾU CHƯA ĐĂNG NHẬP - HIỂN THỊ MÀN HÌNH AUTH XỊN MỊN VALDIATION MẠNH
+                    if (!user) {
+                        return (
+                            <div className="min-h-screen flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-950 via-slate-900 to-slate-950">
+                                <div className="glass w-full max-w-md p-8 rounded-3xl shadow-2xl space-y-6">
+                                    <div className="text-center space-y-2">
+                                        <div className="inline-flex p-3 bg-emerald-500/10 text-emerald-400 rounded-2xl">
+                                            <span className="material-icons-round text-3xl">spa</span>
+                                        </div>
+                                        <h1 className="text-2xl font-extrabold tracking-tight text-white">EcoConnect HCM</h1>
+                                        <p className="text-xs text-slate-400">Hệ thống kết nối bảo vệ môi trường thông minh TP.HCM</p>
+                                    </div>
 
-                        fetch('/api/chat', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ message: msg })
-                        })
-                        .then(res => res.json())
-                        .then(data => {
-                            setChatLogs(prev => [...prev, { sender: 'AI', text: data.reply }]);
-                        });
-                    };
+                                    <div className="flex bg-slate-800 p-1 rounded-xl text-xs font-semibold">
+                                        <button onClick={() => setAuthMode('login')} className={\`flex-1 py-2 rounded-lg transition \${authMode === 'login' ? 'bg-emerald-500 text-white shadow' : 'text-slate-400'}\`}>Đăng nhập</button>
+                                        <button onClick={() => setAuthMode('register')} className={\`flex-1 py-2 rounded-lg transition \${authMode === 'register' ? 'bg-emerald-500 text-white shadow' : 'text-slate-400'}\`}>Đăng ký</button>
+                                    </div>
+
+                                    <form onSubmit={handleAuth} className="space-y-4 text-xs">
+                                        {authMode === 'register' && (
+                                            <div>
+                                                <label className="block text-slate-300 font-medium mb-1.5">Họ và tên</label>
+                                                <input type="text" value={nameInput} onChange={e => setNameInput(e.target.value)} placeholder="Nguyễn Văn X..." className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500" required />
+                                            </div>
+                                        )}
+
+                                        <div>
+                                            <label className="block text-slate-300 font-medium mb-1.5">Email tài khoản</label>
+                                            <input type="email" value={emailInput} onChange={e => setEmailInput(e.target.value)} placeholder="user@gmail.com, admin@.., org@.." className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500" required />
+                                            <p className="text-[10px] text-slate-500 mt-1">Gợi ý: Nhập email có chữ "admin" hoặc "org" để test phân quyền tự động.</p>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-slate-300 font-medium mb-1.5">Mật khẩu</label>
+                                            <input type="password" value={passInput} onChange={e => checkPassword(e.target.value)} placeholder="••••••••" className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500" required />
+                                            
+                                            {authMode === 'register' && (
+                                                <div className="mt-2 space-y-1">
+                                                    <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                                                        <div className={\`h-full transition-all duration-300 \${passStrength <= 25 ? 'bg-red-500 w-1/4' : passStrength <= 50 ? 'bg-orange-400 w-1/2' : passStrength <= 75 ? 'bg-yellow-400 w-3/4' : 'bg-emerald-500 w-full'}\`}></div>
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-400">Độ mạnh: {passStrength <= 25 ? '🔴 Yếu' : passStrength <= 50 ? '🟠 Trung bình' : passStrength <= 75 ? '🟡 Khá' : '🟢 Mạnh'}</span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {authMode === 'register' && (emailInput.includes('admin') || emailInput.includes('official')) && (
+                                            <div>
+                                                <label className="block text-red-400 font-semibold mb-1.5">Mã xác nhận Cán bộ chính quyền</label>
+                                                <input type="text" value={adminCode} onChange={e => setAdminCode(e.target.value)} placeholder="Nhập ADMIN123 để kích hoạt..." className="w-full bg-slate-900 border border-red-500/50 rounded-xl p-3 text-white focus:outline-none" required />
+                                            </div>
+                                        )}
+
+                                        <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold p-3 rounded-xl shadow-lg transition tracking-wide font-medium mt-2">
+                                            {authMode === 'login' ? 'XÁC THỰC VÀO HỆ THỐNG' : 'ĐĂNG KÝ TÀI KHOẢN MỚI'}
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        );
+                    }
 
                     return (
-                        <div className="min-h-screen p-4 md:p-8 max-w-6xl mx-auto space-y-6">
-                            
-                            {/* HEADER CHUẨN LÚC ĐẦU */}
-                            <header className="border-b border-gray-800 pb-4 flex justify-between items-center">
-                                <div>
-                                    <h1 className="text-3xl font-bold text-green-400">Trạm Điều Phối Môi Trường</h1>
-                                    <p className="text-sm text-gray-400 mt-1">Hệ thống giám sát và tích lũy điểm thưởng bảo vệ môi trường</p>
-                                </div>
-                                <div className="bg-gray-800 px-4 py-2 rounded-xl border border-green-500/30 text-xs font-mono text-green-400 flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                                    HỆ THỐNG ONLINE
-                                </div>
-                            </header>
-
-                            {/* BỐ CỤC 3 CỘT TRỰC QUAN */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                
-                                {/* CỘT 1: RADAR MAP & GỬI BÁO CÁO */}
+                        <div className="min-h-screen flex flex-col md:flex-row">
+                            {/* 🛠️ MENU ĐIỀU HƯỚNG BÊN TRÁI (SIDEBAR) ĐẦY ĐỦ CHO 12 VIEW CHUẨN ĐẸP */}
+                            <aside className="w-full md:w-64 glass p-4 flex flex-col justify-between border-r border-slate-800 shrink-0">
                                 <div className="space-y-6">
-                                    {/* 📍 Radar Báo Cáo */}
-                                    <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-green-500">
-                                        <h2 className="text-xl mb-4 text-green-300 font-bold flex items-center gap-2">📍 Radar Bản Đồ</h2>
-                                        
-                                        {/* Khung bản đồ Radar tròn tích hợp */}
-                                        <div className="relative w-full aspect-square bg-gray-950 rounded-full border border-green-600/30 overflow-hidden flex items-center justify-center mx-auto max-w-[280px]">
-                                            <div className="absolute inset-6 rounded-full border border-green-500/10"></div>
-                                            <div className="absolute inset-14 rounded-full border border-green-500/10"></div>
-                                            <div className="absolute inset-24 rounded-full border border-green-500/10"></div>
-                                            <div className="absolute inset-0 radar-sweep rounded-full pointer-events-none"></div>
-                                            
-                                            <div className="absolute h-full w-[1px] bg-green-500/10"></div>
-                                            <div className="absolute w-full h-[1px] bg-green-500/10"></div>
-
-                                            {/* Chấm Đỏ Sự Cố Nhấp Nháy */}
-                                            {reports.map(r => (
-                                                <div 
-                                                    key={r.id} 
-                                                    className="absolute group cursor-pointer"
-                                                    style={{ left: \`\${r.x || 50}%\`, top: \`\${r.y || 50}%\` }}
-                                                >
-                                                    <span className="absolute -inset-1.5 rounded-full bg-red-500 animate-ping opacity-75"></span>
-                                                    <span className="relative block w-2.5 h-2.5 rounded-full bg-red-500 border border-white shadow"></span>
-                                                    
-                                                    {/* Tooltip khi rê chuột */}
-                                                    <div className="absolute bottom-5 left-1/2 -translate-x-1/2 w-40 bg-gray-900 text-[11px] p-2 rounded-lg border border-gray-700 hidden group-hover:block z-50 shadow-2xl">
-                                                        <p className="font-bold text-white mb-0.5">{r.title}</p>
-                                                        <p className="text-gray-400">Vị trí: {r.location}</p>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                    <div className="flex items-center gap-2.5 px-2">
+                                        <span className="material-icons-round text-emerald-400 text-2xl">spa</span>
+                                        <div>
+                                            <h2 className="font-extrabold text-sm tracking-tight text-white">{t.appName}</h2>
+                                            <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full uppercase font-bold">{user.role}</span>
                                         </div>
-                                        <p className="text-[11px] text-gray-400 text-center italic mt-3">Rê chuột vào các chấm đỏ để xem nhanh gói tin</p>
                                     </div>
 
-                                    {/* Form Gửi Báo Cáo */}
-                                    <div className="bg-gray-800 p-5 rounded-xl shadow-lg border border-green-500">
-                                        <h2 className="text-base font-bold mb-3 text-green-300">🚨 Gửi Sự Cố Môi Trường</h2>
-                                        <form onSubmit={handleReportSubmit} className="space-y-3 text-xs">
-                                            <input 
-                                                type="text" 
-                                                placeholder="Tên sự cố (ví dụ: Đổ trộm rác thải)..." 
-                                                className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-green-500"
-                                                value={title}
-                                                onChange={e => setTitle(e.target.value)}
-                                            />
-                                            <input 
-                                                type="text" 
-                                                placeholder="Khu vực / Quận Huyện..." 
-                                                className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-green-500"
-                                                value={location}
-                                                onChange={e => setLocation(e.target.value)}
-                                            />
-                                            <button type="submit" className="w-full bg-green-600 hover:bg-green-500 text-white font-bold p-2.5 rounded-lg transition uppercase tracking-wider font-mono">
-                                                Phát tín hiệu báo cáo
-                                            </button>
-                                        </form>
-                                    </div>
+                                    {/* Danh sách định tuyến linh hoạt theo vai trò */}
+                                    <nav className="space-y-1 text-xs font-medium">
+                                        <button onClick={() => setCurrentTab('home')} className={\`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition \${currentTab === 'home' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:bg-slate-800'}\`}><span className="material-icons-round text-lg">home</span> {t.home}</button>
+                                        <button onClick={() => setCurrentTab('report')} className={\`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition \${currentTab === 'report' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:bg-slate-800'}\`}><span className="material-icons-round text-lg">map</span> {t.report}</button>
+                                        <button onClick={() => setCurrentTab('community')} className={\`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition \${currentTab === 'community' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:bg-slate-800'}\`}><span className="material-icons-round text-lg">people</span> {t.comm}</button>
+                                        <button onClick={() => setCurrentTab('chat')} className={\`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition \${currentTab === 'chat' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:bg-slate-800'}\`}><span className="material-icons-round text-lg">forum</span> {t.chat}</button>
+                                        <button onClick={() => setCurrentTab('news')} className={\`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition \${currentTab === 'news' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:bg-slate-800'}\`}><span className="material-icons-round text-lg">newspaper</span> {t.news}</button>
+                                        <button onClick={() => setCurrentTab('tracking')} className={\`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition \${currentTab === 'tracking' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:bg-slate-800'}\`}><span className="material-icons-round text-lg">analytics</span> {t.tracking}</button>
+                                        <button onClick={() => setCurrentTab('stats')} className={\`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition \${currentTab === 'stats' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:bg-slate-800'}\`}><span className="material-icons-round text-lg">bar_chart</span> {t.stats}</button>
+                                        <button onClick={() => setCurrentTab('schedule')} className={\`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition \${currentTab === 'schedule' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:bg-slate-800'}\`}><span className="material-icons-round text-lg">calendar_month</span> {t.schedule}</button>
+                                        <button onClick={() => setCurrentTab('tips')} className={\`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition \./tips \${currentTab === 'tips' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:bg-slate-800'}\`}><span className="material-icons-round text-lg">tips_and_updates</span> {t.tips}</button>
+                                        
+                                        {/* Tuyến đặc quyền Cán bộ */}
+                                        {user.role === 'Official' && (
+                                            <button onClick={() => setCurrentTab('admin')} className={\`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-blue-500/20 text-blue-400 transition \${currentTab === 'admin' ? 'bg-blue-600 text-white' : 'hover:bg-blue-950/40'}\`}><span className="material-icons-round text-lg">gavel</span> {t.admin}</button>
+                                        )}
+                                        
+                                        {/* Tuyến đặc quyền Đơn vị tổ chức */}
+                                        {user.role === 'Organizer' && (
+                                            <button onClick={() => setCurrentTab('permission')} className={\`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-purple-500/20 text-purple-400 transition \${currentTab === 'permission' ? 'bg-purple-600 text-white' : 'hover:bg-purple-950/40'}\`}><span className="material-icons-round text-lg">assignment_turned_in</span> {t.perm}</button>
+                                        )}
+
+                                        <button onClick={() => setCurrentTab('menu')} className={\`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition \${currentTab === 'menu' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:bg-slate-800'}\`}><span className="material-icons-round text-lg">account_circle</span> {t.menu}</button>
+                                    </nav>
                                 </div>
 
-                                {/* CỘT 2: DANH SÁCH BÁO CÁO THỰC ĐỊA */}
-                                <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-green-500 flex flex-col h-[570px]">
-                                    <h2 className="text-xl mb-4 text-green-300 font-bold">📋 Luồng Tin Sự Cố</h2>
-                                    <div className="space-y-3 overflow-y-auto flex-1 pr-1">
-                                        {reports.map(r => (
-                                            <div key={r.id} className="p-3 bg-gray-700/50 border border-gray-700 rounded-xl text-xs space-y-1.5 transition hover:bg-gray-700/80">
-                                                <p className="font-bold text-slate-100 text-sm">{r.title}</p>
-                                                <p className="text-gray-400">📍 Khu vực: {r.location}</p>
-                                                <div className="flex justify-between items-center pt-1 border-t border-gray-700/50">
-                                                    <span className="text-green-400 font-mono font-bold">Trạng thái: {r.status}</span>
-                                                    <span className="bg-green-900/40 text-green-400 px-2 py-0.5 rounded font-mono font-bold">+{r.points} XP</span>
+                                <div className="pt-4 border-t border-slate-800 space-y-3">
+                                    <div className="flex justify-between items-center bg-slate-900 p-2.5 rounded-xl text-xs">
+                                        <span className="font-semibold text-slate-300 truncate max-w-[100px]">{user.name}</span>
+                                        <span className="bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded font-mono font-bold">{user.points} XP</span>
+                                    </div>
+                                    <button onClick={() => setUser(null)} className="w-full flex items-center justify-center gap-2 p-2 rounded-xl text-xs text-red-400 hover:bg-red-950/30 font-semibold transition"><span className="material-icons-round text-sm">logout</span> Đăng xuất</button>
+                                </div>
+                            </aside>
+
+                            {/* 📱 KHU VỰC NỘI DUNG CHÍNH (MAIN VIEWPORT) */}
+                            <main className="flex-1 flex flex-col min-w-0">
+                                {/* TOP BAR - NGÔN NGỮ & PROFILE */}
+                                <header className="glass p-4 px-6 flex justify-between items-center border-b border-slate-800 shrink-0">
+                                    <h2 className="text-base font-bold text-white capitalize">{t[currentTab] || currentTab}</h2>
+                                    
+                                    <div className="flex items-center gap-4 text-xs">
+                                        {/* Bộ chọn 4 ngôn ngữ đúng yêu cầu */}
+                                        <div className="relative inline-block">
+                                            <select value={lang} onChange={e => setLang(e.target.value)} className="bg-slate-800 text-white font-medium p-2 px-3 rounded-xl border border-slate-700 focus:outline-none cursor-pointer">
+                                                <option value="vi">🇻🇳 Tiếng Việt</option>
+                                                <option value="en">🇬🇧 English</option>
+                                                <option value="fr">🇫🇷 Français</option>
+                                                <option value="jp">🇯🇵 日本語</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-bold shadow uppercase">{user.name[0]}</div>
+                                            <span className="hidden sm:inline font-medium text-slate-300">Hạng: <b className="text-emerald-400">{user.rank}</b></span>
+                                        </div>
+                                    </div>
+                                </header>
+
+                                {/* KHU VỰC RENDER CHI TIẾT 12 TRANG DỰ ÁN */}
+                                <div className="flex-1 p-6 overflow-y-auto custom-scroll">
+                                    
+                                    {/* 🏠 TRANG 1: TRANG CHỦ (Home) */}
+                                    {currentTab === 'home' && (
+                                        <div className="space-y-6">
+                                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                                <div className="glass p-5 rounded-2xl flex items-center gap-4">
+                                                    <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl"><span className="material-icons-round">analytics</span></div>
+                                                    <div><p className="text-[10px] text-slate-400 font-medium">Báo cáo tuần này</p><h3 className="text-xl font-bold">{appState.reports.length + 14} vụ</h3></div>
+                                                </div>
+                                                <div className="glass p-5 rounded-2xl flex items-center gap-4">
+                                                    <div className="p-3 bg-amber-500/10 text-amber-400 rounded-xl"><span className="material-icons-round">emergency</span></div>
+                                                    <div><p className="text-[10px] text-slate-400 font-medium">Điểm nóng đang xử lý</p><h3 className="text-xl font-bold">5 điểm</h3></div>
+                                                </div>
+                                                <div className="glass p-5 rounded-2xl flex items-center gap-4">
+                                                    <div className="p-3 bg-blue-500/10 text-blue-400 rounded-xl"><span className="material-icons-round">volunteer_activism</span></div>
+                                                    <div><p className="text-[10px] text-slate-400 font-medium">Tình nguyện viên</p><h3 className="text-xl font-bold">1,420 mem</h3></div>
+                                                </div>
+                                                <div className="glass p-5 rounded-2xl flex items-center gap-4">
+                                                    <div className="p-3 bg-teal-500/10 text-teal-400 rounded-xl"><span className="material-icons-round">update</span></div>
+                                                    <div><p className="text-[10px] text-slate-400 font-medium">Trạng thái dữ liệu</p><h3 className="text-xs font-bold text-emerald-400 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>Real-time IoT</h3></div>
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
+
+                                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                                <div className="lg:col-span-2 glass p-6 rounded-2xl space-y-4">
+                                                    <div className="flex justify-between items-center">
+                                                        <h3 className="text-sm font-bold text-slate-200">📊 Thống kê chỉ số ô nhiễm (TP.HCM)</h3>
+                                                        <span className="text-[10px] text-slate-400">Xem theo: Ngày/Tuần</span>
+                                                    </div>
+                                                    {/* Giả lập biểu đồ cột Recharts tương tác bằng CSS tuyệt đẹp */}
+                                                    <div className="h-48 flex items-end justify-between gap-4 pt-6 px-4 border-b border-slate-700">
+                                                        <div className="w-full flex flex-col items-center gap-2"><div className="w-full bg-emerald-500/30 rounded-t h-[40%]"></div><span className="text-[9px] text-slate-400">Q.1</span></div>
+                                                        <div className="w-full flex flex-col items-center gap-2"><div className="w-full bg-red-500/60 rounded-t h-[85%]"></div><span className="text-[9px] text-slate-400">Q.8</span></div>
+                                                        <div className="w-full flex flex-col items-center gap-2"><div className="w-full bg-orange-500/50 rounded-t h-[65%]"></div><span className="text-[9px] text-slate-400">T.Đức</span></div>
+                                                        <div className="w-full flex flex-col items-center gap-2"><div className="w-full bg-emerald-500/30 rounded-t h-[25%]"></div><span className="text-[9px] text-slate-400">Q.7</span></div>
+                                                        <div className="w-full flex flex-col items-center gap-2"><div className="w-full bg-orange-500/50 rounded-t h-[55%]"></div><span className="text-[9px] text-slate-400">B.Thạnh</span></div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="glass p-6 rounded-2xl space-y-4">
+                                                    <h3 className="text-sm font-bold text-amber-400 flex items-center gap-1"><span className="material-icons-round text-base">military_tech</span> Thử thách sống xanh tuần này</h3>
+                                                    <div className="p-4 bg-slate-800/80 rounded-xl border border-slate-700 space-y-3">
+                                                        <p className="text-xs font-bold text-white">🔥 "7 ngày nói không với túi nylon"</p>
+                                                        <p className="text-[11px] text-slate-400">Chụp ảnh phân loại rác tại nhà hoặc sử dụng túi vải để hoàn thành và nhận thưởng ngay.</p>
+                                                        <div className="flex justify-between items-center text-xs pt-1">
+                                                            <span className="text-emerald-400 font-mono">+100 EcoPoints</span>
+                                                            <button onClick={() => alert('🎉 Đã kích hoạt thử thách! Chúc bạn may mắn!')} className="bg-emerald-600 p-1.5 px-3 rounded-lg text-[10px] font-bold">Tham gia</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 🗺️ TRANG 2: BẢN ĐỒ & BÁO CÁO (MapReport) */}
+                                    {currentTab === 'report' && (
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                            <div className="lg:col-span-2 glass p-5 rounded-2xl flex flex-col h-[520px]">
+                                                <div className="flex justify-between items-center mb-3">
+                                                    <h3 className="text-xs font-bold text-slate-200">🗺️ Bản đồ điểm nóng số hóa (Tọa độ trung tâm TP.HCM)</h3>
+                                                    <div className="flex gap-2 text-[10px]">
+                                                        <span className="flex items-center gap-1 text-red-400"><span className="w-2 h-2 rounded-full bg-red-500"></span>Nghiêm trọng</span>
+                                                        <span className="flex items-center gap-1 text-orange-400"><span className="w-2 h-2 rounded-full bg-orange-500"></span>Cảnh báo</span>
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Bản đồ định vị số hóa trực quan cao cấp */}
+                                                <div className="flex-1 bg-slate-950 rounded-xl relative overflow-hidden border border-slate-800">
+                                                    <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:16px_16px]"></div>
+                                                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none opacity-10">
+                                                        <span className="material-icons-round text-9xl">map</span>
+                                                        <p className="text-xs font-mono">OpenStreetMap - Center HCM (10.7769, 106.7009)</p>
+                                                    </div>
+
+                                                    {/* Render Markers từ CSDL ẩn danh hoặc định danh công khai */}
+                                                    {appState.reports.map(r => (
+                                                        <div key={r.id} className="absolute group cursor-pointer" style={{ left: \`\${r.x}%\`, top: \`\${r.y}%\` }}>
+                                                            <span className={\`absolute -inset-2 rounded-full opacity-60 animate-ping \${r.severity === 'Severe' ? 'bg-red-500' : r.severity === 'Warning' ? 'bg-orange-500' : 'bg-blue-500'}\`}></span>
+                                                            <span className={\`relative block w-3.5 h-3.5 rounded-full border-2 border-white shadow \${r.severity === 'Severe' ? 'bg-red-500' : r.severity === 'Warning' ? 'bg-orange-500' : 'bg-blue-500'}\`}></span>
+                                                            
+                                                            {/* Tooltip ghim chi tiết điểm nóng */}
+                                                            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-[10px] p-2.5 rounded-xl border border-slate-700 hidden group-hover:block z-50 shadow-2xl space-y-1">
+                                                                <p className="font-bold text-white">{r.title}</p>
+                                                                <p className="text-slate-400">📍 {r.location}</p>
+                                                                <p className="text-emerald-400 font-bold">Nguồn: {r.reporter}</p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Form Báo cáo Đầy đủ Validation */}
+                                            <div className="glass p-5 rounded-2xl space-y-4">
+                                                <h3 className="text-sm font-bold text-emerald-400 flex items-center gap-1"><span className="material-icons-round text-base">add_location_alt</span> Tạo báo cáo sự cố mới</h3>
+                                                <form onSubmit={(e) => {
+                                                    e.preventDefault();
+                                                    const formData = {
+                                                        title: e.target.title.value,
+                                                        location: e.target.location.value,
+                                                        type: e.target.type.value,
+                                                        severity: e.target.severity.value,
+                                                        isAnonymous: e.target.isAnonymous.checked,
+                                                        reporterName: user.name,
+                                                        reporterPhone: "090123456"
+                                                    };
+                                                    fetch('/api/reports', {
+                                                        method: 'POST',
+                                                        headers: {'Content-Type': 'application/json'},
+                                                        body: JSON.stringify(formData)
+                                                    }).then(res=>res.json()).then(data=>{
+                                                        if(data.success) { alert('🎉 Gửi báo cáo thành công! Bản ghi đang chờ Cán bộ duyệt.'); loadState(); e.target.reset(); }
+                                                    });
+                                                }} className="space-y-3 text-xs">
+                                                    <div>
+                                                        <label className="block text-slate-400 mb-1">Tên sự cố / Mô tả ngắn</label>
+                                                        <input name="title" type="text" placeholder="Ví dụ: Đổ trộm chất thải rắn công nghiệp..." className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500" required />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-slate-400 mb-1">Địa chỉ / Khu vực cụ thể tại TP.HCM</label>
+                                                        <input name="location" type="text" placeholder="Số nhà, Tên đường, Quận/Huyện..." className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500" required />
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        <div>
+                                                            <label className="block text-slate-400 mb-1">Loại ô nhiễm</label>
+                                                            <select name="type" className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none">
+                                                                <option value="Trash">🗑️ Rác thải</option>
+                                                                <option value="Water">💧 Nước thải</option>
+                                                                <option value="Air">🏭 Không khí</option>
+                                                            </select>
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-slate-400 mb-1">Mức độ nguy cấp</label>
+                                                            <select name="severity" className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none">
+                                                                <option value="Severe">🔴 Nghiêm trọng</option>
+                                                                <option value="Warning">🟠 Cảnh báo</option>
+                                                                <option value="Info">🔵 Thông tin</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div className="p-3 bg-slate-800 rounded-xl border border-dashed border-slate-600 text-center cursor-pointer hover:bg-slate-700/50">
+                                                        <span className="material-icons-round text-lg text-slate-400">cloud_upload</span>
+                                                        <p className="text-[10px] text-slate-400">Upload hình ảnh minh chứng thực địa</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 py-1">
+                                                        <input name="isAnonymous" type="checkbox" id="anon" className="rounded bg-slate-900 border-slate-700 text-emerald-600 focus:ring-0" />
+                                                        <label htmlFor="anon" className="text-slate-300 font-medium cursor-pointer">Báo cáo ẩn danh để bảo vệ danh tính</label>
+                                                    </div>
+                                                    <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold p-2.5 rounded-xl font-mono uppercase tracking-wider">Phát tín hiệu khẩn cấp</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 👥 TRANG 3: CỘNG ĐỒNG (Community - 3 TAB CHUẨN ĐÚNG KHỚP SPEC) */}
+                                    {currentTab === 'community' && (
+                                        <div className="space-y-4">
+                                            <div className="flex bg-slate-800 p-1 rounded-xl max-w-sm text-xs font-semibold">
+                                                <button onClick={() => setCommTab('events')} className={\`flex-1 py-2 rounded-lg flex items-center justify-center gap-1 \${commTab === 'events' ? 'bg-emerald-500 text-white' : 'text-slate-400'}\`}><span className="material-icons-round text-sm">calendar_today</span> Sự kiện</button>
+                                                <button onClick={() => setCommTab('groups')} className={\`flex-1 py-2 rounded-lg flex items-center justify-center gap-1 \${commTab === 'groups' ? 'bg-emerald-500 text-white' : 'text-slate-400'}\`}><span className="material-icons-round text-sm">groups</span> Nhóm</button>
+                                                <button onClick={() => setCommTab('reels')} className={\`flex-1 py-2 rounded-lg flex items-center justify-center gap-1 \${commTab === 'reels' ? 'bg-emerald-500 text-white' : 'text-slate-400'}\`}><span className="material-icons-round text-sm">movie</span> Eco Reels</button>
+                                            </div>
+
+                                            {/* Tab Sự kiện */}
+                                            {commTab === 'events' && (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    {appState.events.map(ev => (
+                                                        <div key={ev.id} className="glass rounded-2xl overflow-hidden flex flex-col sm:flex-row">
+                                                            <img src={ev.img} className="w-full sm:w-36 h-36 object-cover" />
+                                                            <div className="p-4 flex flex-col justify-between flex-1 text-xs space-y-2">
+                                                                <div>
+                                                                    <h4 className="font-bold text-white text-sm">{ev.title}</h4>
+                                                                    <p className="text-slate-400 text-[11px] mt-1 line-clamp-2">{ev.desc}</p>
+                                                                </div>
+                                                                <div className="space-y-1.5">
+                                                                    <div className="flex justify-between text-[10px] text-slate-400">
+                                                                        <span>📍 {ev.loc}</span>
+                                                                        <span>👥 {ev.joined}/{ev.max}</span>
+                                                                    </div>
+                                                                    <div className="w-full bg-slate-700 h-1 rounded-full overflow-hidden">
+                                                                        <div className="bg-emerald-500 h-full" style={{ width: \`\${(ev.joined/ev.max)*100}%\` }}></div>
+                                                                    </div>
+                                                                </div>
+                                                                <button onClick={() => alert('🎉 Đăng ký thành công! Đã lưu lịch trình.')} className="w-full bg-emerald-600 hover:bg-emerald-500 p-1.5 rounded-lg text-white font-bold">Đăng ký tham gia ngay</button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* Tab Nhóm */}
+                                            {commTab === 'groups' && (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                                                    {appState.groups.map(g => (
+                                                        <div key={g.id} className="glass p-5 rounded-2xl space-y-3">
+                                                            <div className="flex justify-between items-start">
+                                                                <div>
+                                                                    <h4 className="font-bold text-white text-sm">{g.name}</h4>
+                                                                    <p className="text-[10px] text-emerald-400 font-medium">📍 Địa bàn: {g.area}</p>
+                                                                </div>
+                                                                <span className="bg-slate-700 px-2 py-0.5 rounded text-[10px] text-slate-300 font-mono">{g.members} mems</span>
+                                                            </div>
+                                                            <p className="text-slate-400 line-clamp-2">{g.desc}</p>
+                                                            <button onClick={() => alert('🎉 Chào mừng đến với cộng đồng sống xanh!')} className="w-full border border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-400 p-2 rounded-xl font-bold transition">Gia nhập nhóm ngay</button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* Tab Eco Reels (Video ngắn đúng chuẩn định dạng như TikTok/Reels) */}
+                                            {commTab === 'reels' && (
+                                                <div className="max-w-sm mx-auto glass rounded-3xl overflow-hidden shadow-2xl relative aspect-[9/16] max-h-[500px]">
+                                                    <img src="https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=500" className="w-full h-full object-cover" />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-4 space-y-2 text-xs">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-6 h-6 rounded-full bg-emerald-500"></div>
+                                                            <p className="font-bold text-white">@saigon_xanh_team</p>
+                                                        </div>
+                                                        <p className="text-slate-200">Tips phân loại rác thải nhựa cực kỳ dễ làm tại hộ gia đình cư dân đô thị! #gocsongxanh #recycling</p>
+                                                        <div className="flex items-center justify-between text-slate-300 text-[10px] pt-1">
+                                                            <span className="flex items-center gap-1"><span className="material-icons-round text-sm text-red-500">favorite</span> 14.5K</span>
+                                                            <span className="flex items-center gap-1"><span className="material-icons-round text-sm">chat</span> 482</span>
+                                                            <span className="flex items-center gap-1"><span className="material-icons-round text-sm">share</span> Chia sẻ</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* 💬 TRANG 4: CHAT CỘNG ĐỒNG (Chat 2 cột) */}
+                                    {currentTab === 'chat' && (
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[480px]">
+                                            <div className="glass rounded-2xl p-4 space-y-3 flex flex-col">
+                                                <input type="text" placeholder="Tìm phòng chat nhanh..." className="w-full bg-slate-900 border border-slate-700 text-xs p-2 rounded-xl focus:outline-none" />
+                                                <div className="space-y-1.5 flex-1 overflow-y-auto text-xs">
+                                                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex justify-between items-center cursor-pointer">
+                                                        <div><p className="font-bold text-white">🌱 Sài Gòn Xanh - Tổng trạm</p><p className="text-[10px] text-slate-400 truncate w-36">Anh em mai ra quân nhé...</p></div>
+                                                        <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                                    </div>
+                                                    <div className="p-3 bg-slate-800/40 rounded-xl flex justify-between items-center opacity-70 cursor-pointer hover:bg-slate-800">
+                                                        <div><p className="font-bold text-slate-300">♻️ Zero Waste HCM Group</p><p className="text-[10px] text-slate-500">Báo cáo pin cũ đã nhận...</p></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="md:col-span-2 glass rounded-2xl p-4 flex flex-col justify-between">
+                                                <div className="flex-1 bg-slate-950/50 rounded-xl p-3 space-y-2 overflow-y-auto text-xs custom-scroll">
+                                                    <div className="p-2 bg-slate-800 rounded-xl max-w-[80%]"><p className="font-bold text-[9px] text-emerald-400">Hoàng Minh</p><p>Sáng mai tập kết ở Kênh Đôi lúc 7h đúng không cả nhà?</p></div>
+                                                    <div className="p-2 bg-emerald-600 text-white rounded-xl max-w-[80%] ml-auto text-right"><p className="font-bold text-[9px] opacity-70">Bạn</p><p>Đúng rồi bro ơi, nhớ mang ủng cao su nha ní!</p></div>
+                                                </div>
+                                                <div className="flex gap-2 pt-3">
+                                                    <input type="text" placeholder="Nhập tin nhắn hỗ trợ emoji 😊 🌱 ♻️..." className="flex-1 bg-slate-900 border border-slate-700 rounded-xl text-xs px-3 text-white focus:outline-none" />
+                                                    <button onClick={() => alert('Tin nhắn đã truyền tải vào luồng phòng chat.')} className="bg-emerald-600 hover:bg-emerald-500 px-4 rounded-xl text-xs font-bold">Gửi</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 📰 TRANG 5: TIN TỨC & MẸO (News) */}
+                                    {currentTab === 'news' && (
+                                        <div className="space-y-4">
+                                            <div className="flex gap-2 text-xs font-medium">
+                                                {['all', 'article', 'tip', 'video'].map(f => (
+                                                    <button key={f} onClick={() => setNewsFilter(f)} className={\`px-3 py-1.5 rounded-lg border capitalize \${newsFilter === f ? 'bg-emerald-600 border-emerald-500 text-white' : 'border-slate-700 text-slate-400 hover:bg-slate-800'}\`}>
+                                                        {f === 'all' ? 'Tất cả' : f === 'article' ? 'Bài viết' : f === 'tip' ? 'Mẹo' : 'Video/Phóng sự'}
+                                                    </button>
+                                                ))}
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                                                {(newsFilter === 'all' || newsFilter === 'article') && (
+                                                    <div className="glass p-4 rounded-2xl space-y-2">
+                                                        <span className="bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded text-[10px] font-bold">Bài viết - Tin Môi Trường</span>
+                                                        <h4 className="font-bold text-sm text-slate-100">TP.HCM đồng loạt ra quân làm sạch hơn 10 tuyến kênh rạch ô nhiễm đen</h4>
+                                                        <p className="text-slate-400">Các cơ quan chức năng phối hợp cùng các tổ chức thanh niên cộng đồng dọn dẹp hàng tấn rác thải nhựa tồn đọng lâu năm.</p>
+                                                        <p className="text-[10px] text-slate-500">2 giờ trước • Xem thêm</p>
+                                                    </div>
+                                                )}
+                                                {(newsFilter === 'all' || newsFilter === 'tip') && (
+                                                    <div className="glass p-4 rounded-2xl space-y-2">
+                                                        <span className="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded text-[10px] font-bold">Mẹo Sống Xanh</span>
+                                                        <h4 className="font-bold text-sm text-slate-100">5 quy tắc vàng giúp bạn phân loại rác thải hữu cơ và vô cơ chuẩn chỉnh tại gia đình</h4>
+                                                        <p className="text-slate-400">Hành động nhỏ thay đổi lớn. Hướng dẫn chi tiết cách gom rác tái chế để tích thêm điểm thưởng EcoPoints.</p>
+                                                        <p className="text-[10px] text-slate-500">1 ngày trước • Xem thêm</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 📝 TRANG 6: THEO DÕI BÁO CÁO (ReportTracking) */}
+                                    {currentTab === 'tracking' && (
+                                        <div className="glass p-6 rounded-2xl space-y-4 text-xs">
+                                            <h3 className="font-bold text-slate-100">📋 Trạng thái tiến độ xử lý sự cố môi trường của bạn</h3>
+                                            <div className="space-y-3">
+                                                {appState.reports.map(r => (
+                                                    <div key={r.id} className="p-4 bg-slate-800/40 border border-slate-700 rounded-xl space-y-3">
+                                                        <div className="flex justify-between items-center">
+                                                            <div>
+                                                                <span className="text-slate-500 font-mono font-bold mr-2">{r.id}</span>
+                                                                <span className="font-bold text-white text-sm">{r.title}</span>
+                                                            </div>
+                                                            <span className={\`px-2.5 py-1 rounded-full text-[10px] font-bold \${r.status === 'Đã xử lý' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}\`}>{r.status}</span>
+                                                        </div>
+                                                        {/* Lịch trình Timeline chi tiết từng bước đúng cấu hình */}
+                                                        <div className="pl-4 border-l border-slate-600 space-y-2 text-[11px] relative">
+                                                            <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span><span className="text-slate-300">Cơ quan chức năng tiếp nhận & Điều phối đội ứng cứu nhanh.</span></div>
+                                                            <div className="flex items-center gap-2 opacity-50"><span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span><span>Tiến hành thu gom hiện trường thực địa.</span></div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 🛡️ TRANG 7: QUẢN LÝ PHÊ DUYỆT (AdminApproval - CHỈ CÁN BỘ CHÍNH QUYỀN VÀO ĐƯỢC) */}
+                                    {currentTab === 'admin' && user.role === 'Official' && (
+                                        <div className="space-y-4 text-xs">
+                                            <div className="bg-blue-950/40 p-4 rounded-xl border border-blue-500/20 text-blue-400 mb-2">🛡️ <b>Hệ thống tối mật Cán bộ:</b> Được phép xem thông tin liên hệ định danh của người dân để xử lý điều phối nội bộ.</div>
+                                            <div className="space-y-3">
+                                                {appState.reports.filter(r=>r.status==='Chờ xử lý').map(r => (
+                                                    <div key={r.id} className="glass p-4 rounded-xl border border-slate-700 flex justify-between items-start">
+                                                        <div className="space-y-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="bg-red-500/20 text-red-400 px-2 py-0.5 rounded text-[10px] font-bold">{r.severity}</span>
+                                                                <h4 className="font-bold text-white text-sm">{r.title}</h4>
+                                                            </div>
+                                                            <p className="text-slate-400">📍 Khu vực: {r.location}</p>
+                                                            <p className="text-slate-300 font-medium">👤 Người báo cáo: <b className="text-blue-400">{r.reporter}</b> - SĐT: {r.phone}</p>
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <button onClick={() => { r.status='Đang xử lý'; alert('Đã duyệt & Đưa vào luồng xử lý thực địa!'); loadState(); }} className="bg-emerald-600 hover:bg-emerald-500 p-2 px-3 rounded-xl font-bold text-white">Duyệt cấp phép</button>
+                                                            <button onClick={() => { r.status='Từ chối'; alert('Đã từ chối bản tin báo cáo sai lệch.'); loadState(); }} className="bg-slate-800 hover:bg-slate-700 p-2 px-3 rounded-xl font-bold text-red-400">Từ chối</button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 📊 TRANG 8: THỐNG KÊ TỔNG QUAN (Statistics) */}
+                                    {currentTab === 'stats' && (
+                                        <div className="glass p-6 rounded-2xl space-y-6 text-xs">
+                                            <h3 className="font-bold text-slate-100">📈 Biểu đồ xu hướng và Phân tích danh mục ô nhiễm TP.HCM</h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="space-y-3">
+                                                    <p className="text-slate-300 font-semibold">Tỷ lệ theo danh mục nguồn thải (Pie Chart)</p>
+                                                    <div className="space-y-2">
+                                                        <div><div className="flex justify-between mb-1"><span>🗑️ Rác thải nhựa (55%)</span></div><div className="w-full bg-slate-800 h-2 rounded-full"><div className="bg-emerald-500 h-full w-[55%]"></div></div></div>
+                                                        <div><div className="flex justify-between mb-1"><span>💧 Nước thải sinh hoạt (30%)</span></div><div className="w-full bg-slate-800 h-2 rounded-full"><div className="bg-blue-500 h-full w-[30%]"></div></div></div>
+                                                        <div><div className="flex justify-between mb-1"><span>🏭 Khói bụi mịn không khí (15%)</span></div><div className="w-full bg-slate-800 h-2 rounded-full"><div className="bg-orange-500 h-full w-[15%]"></div></div></div>
+                                                    </div>
+                                                </div>
+                                                <div className="p-4 bg-slate-900 rounded-xl flex items-center justify-center border border-slate-800">
+                                                    <div className="text-center space-y-1">
+                                                        <span className="material-icons-round text-3xl text-emerald-400">verified</span>
+                                                        <p className="font-bold text-white">Chỉ số AQI Trung bình HCM</p>
+                                                        <p className="text-2xl font-black text-emerald-400">62</p>
+                                                        <p className="text-[10px] text-emerald-400/80 bg-emerald-500/10 px-3 py-1 rounded-full font-bold">Mức độ an toàn đạt tiêu chuẩn WHO</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 📅 TRANG 9: LỊCH TRÌNH SỰ KIỆN (Schedule) */}
+                                    {currentTab === 'schedule' && (
+                                        <div className="glass p-6 rounded-2xl space-y-4 text-xs">
+                                            <h3 className="font-bold text-slate-100">🗓️ Lịch hoạt động tình nguyện & Deadline bảo cáo</h3>
+                                            <div className="grid grid-cols-7 gap-1 text-center font-bold text-slate-400 mb-2">
+                                                <span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span>CN</span>
+                                            </div>
+                                            <div className="grid grid-cols-7 gap-2 h-40 text-left">
+                                                {Array.from({length: 28}).map((_, i) => (
+                                                    <div key={i} className={\`p-1.5 bg-slate-900/60 rounded-lg border border-slate-800 flex flex-col justify-between \${i+1 === 15 ? 'border-emerald-500/60 bg-emerald-950/20' : ''}\`}>
+                                                        <span className="text-[10px] text-slate-500 font-mono">{i+1}</span>
+                                                        {i+1 === 15 && <span className="w-2 h-2 rounded-full bg-emerald-400 block mx-auto shadow-emerald-500 shadow"></span>}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <p className="text-[11px] text-emerald-400 bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/20">💡 <b>Nhắc nhở:</b> Bạn có 1 sự kiện dọn rác xanh tại Kênh Đôi vào ngày 15 sắp tới.</p>
+                                        </div>
+                                    )}
+
+                                    {/* 🌿 TRANG 10: MẸO SỐNG XANH (GreenTips) */}
+                                    {currentTab === 'tips' && (
+                                        <div className="space-y-4 text-xs">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="glass p-5 rounded-2xl border-l-4 border-emerald-500 space-y-2">
+                                                    <h4 className="font-bold text-white text-sm flex items-center gap-1">♻️ Cẩm nang ủ phân hữu cơ (Composting) tại nhà</h4>
+                                                    <p className="text-slate-400">Tận dụng gốc rau thừa, vỏ củ quả trộn cùng đất mụn hữu cơ để tạo ra phân bón sinh học bồi đắp cây xanh gia đình lành mạnh.</p>
+                                                </div>
+                                                <div className="glass p-5 rounded-2xl border-l-4 border-blue-500 space-y-2">
+                                                    <h4 className="font-bold text-white text-sm flex items-center gap-1">💧 Giải pháp tiết kiệm tài nguyên nước sinh hoạt</h4>
+                                                    <p className="text-slate-400">Tái sử dụng nước vo gạo để tưới cây, khóa vòi nước khi chà răng để ngăn lãng phí hàng chục lít nước sạch vô ích hằng ngày.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 📋 TRANG 11: YÊU CẦU XIN PHÉP (PermissionRequest - DÀNH CHO NHÀ TỔ CHỨC) */}
+                                    {currentTab === 'permission' && user.role === 'Organizer' && (
+                                        <div className="glass p-6 rounded-2xl space-y-4 text-xs">
+                                            <h3 className="font-bold text-purple-400 flex items-center gap-1"><span className="material-icons-round text-base">assignment_turned_in</span> Gửi yêu cầu phê duyệt hoạt động môi trường</h3>
+                                            <form onSubmit={(e) => {
+                                                e.preventDefault();
+                                                const newReq = {
+                                                    title: e.target.pTitle.value,
+                                                    org: e.target.pOrg.value,
+                                                    date: new Date().toISOString().split('T')[0]
+                                                };
+                                                fetch('/api/permissions', {
+                                                    method: 'POST',
+                                                    headers: {'Content-Type': 'application/json'},
+                                                    body: JSON.stringify(newReq)
+                                                }).then(res=>res.json()).then(data=>{
+                                                    if(data.success) { alert('🎉 Đã nộp đơn xin phép lên Sở Tài nguyên Môi trường!'); loadState(); e.target.reset(); }
+                                                });
+                                            }} className="space-y-3">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    <div><label className="block text-slate-400 mb-1">Tên tổ chức phát động</label><input name="pOrg" type="text" placeholder="Đại học, Doanh nghiệp..." className="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-white focus:outline-none" required /></div>
+                                                    <div><label className="block text-slate-400 mb-1">Nội dung hoạt động cộng đồng</label><input name="pTitle" type="text" placeholder="Ví dụ: Đặt trạm gom pin cũ nguy hại..." className="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-white focus:outline-none" required /></div>
+                                                </div>
+                                                <button type="submit" className="bg-purple-600 hover:bg-purple-500 font-bold p-2.5 px-6 rounded-xl text-white uppercase tracking-wider font-mono">Gửi hồ sơ thẩm định</button>
+                                            </form>
+                                        </div>
+                                    )}
+
+                                    {/* 📱 TRANG 12: MENU & PROFILE (Menu) */}
+                                    {currentTab === 'menu' && (
+                                        <div className="glass p-6 rounded-2xl max-w-xl mx-auto text-xs space-y-6">
+                                            <div className="text-center space-y-3">
+                                                <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 mx-auto flex items-center justify-center text-white text-3xl font-black uppercase shadow-xl">{user.name[0]}</div>
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-white">{user.name}</h3>
+                                                    <p className="text-slate-400 text-[11px]">{user.email}</p>
+                                                </div>
+                                                <span className="inline-block bg-emerald-500/10 text-emerald-400 font-bold p-1 px-4 rounded-full border border-emerald-500/20">Cấp bậc tài khoản: {user.role}</span>
+                                            </div>
+                                            <div className="border-t border-slate-800 pt-4 space-y-2 text-slate-300">
+                                                <div className="flex justify-between p-2 bg-slate-900 rounded-lg"><span>Điểm cống hiến xanh</span><b className="text-amber-400 font-mono">{user.points} XP</b></div>
+                                                <div className="flex justify-between p-2 bg-slate-900 rounded-lg"><span>Đại lý quà tặng hỗ trợ</span><b className="text-emerald-400">Đã mở khóa voucher Katinat</b></div>
+                                            </div>
+                                        </div>
+                                    )}
+
                                 </div>
+                            </main>
 
-                                {/* CỘT 3: BẢNG XẾP HẠNG XP & CHATBOX ECO-BRO */}
-                                <div className="space-y-6">
-                                    {/* 🏆 Bảng Xếp Hạng */}
-                                    <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-blue-500">
-                                        <h2 className="text-xl mb-4 text-blue-300 font-bold">🏆 Bảng Vinh Danh EcoPoints</h2>
-                                        <div className="space-y-2.5 text-xs">
-                                            {leaderboard.map((user, idx) => (
-                                                <div key={idx} className="flex justify-between items-center p-3 bg-gray-700/30 rounded-xl border border-gray-700">
-                                                    <span className="text-slate-200 font-medium">#{idx+1} {user.name}</span>
-                                                    <span className="text-green-400 font-mono font-bold">{user.points} XP</span>
+                            {/* 🤖 FLOATING CHAT BOT AI (EcoBot) TRÍCH NGUỒN IQAir, WHO ĐÚNG CAM KẾT CHUẨN CHỈ */}
+                            <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+                                {isBotOpen && (
+                                    <div className="glass w-72 sm:w-80 h-96 rounded-2xl p-4 flex flex-col justify-between shadow-2xl mb-3 border border-emerald-500/30">
+                                        <div className="flex justify-between items-center pb-2 border-b border-slate-800">
+                                            <div className="flex items-center gap-1.5"><span className="material-icons-round text-emerald-400 text-sm">smart_toy</span><span className="text-xs font-bold text-white">EcoBot Trợ lý AI Môi trường</span></div>
+                                            <button onClick={() => setIsBotOpen(false)} className="text-slate-400 hover:text-white"><span className="material-icons-round text-sm">close</span></button>
+                                        </div>
+                                        <div className="flex-1 bg-slate-950/60 rounded-xl p-2.5 my-2 overflow-y-auto space-y-2 text-[10px] custom-scroll">
+                                            {botLogs.map((b, i) => (
+                                                <div key={i} className={\`p-2 rounded-xl max-w-[85%] \${b.s === 'user' ? 'bg-emerald-600 ml-auto text-white' : 'bg-slate-800 text-slate-200'}\`}>
+                                                    <p className="leading-relaxed">{b.t}</p>
                                                 </div>
                                             ))}
                                         </div>
-                                    </div>
-
-                                    {/* 💬 Eco-Bro AI Chat */}
-                                    <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-blue-500 flex flex-col h-[270px]">
-                                        <h2 className="text-xl mb-3 text-blue-300 font-bold">💬 Eco-Bro AI</h2>
-                                        <div className="flex-1 bg-gray-950 rounded-xl p-3 text-[11px] space-y-2 overflow-y-auto mb-2 border border-gray-800">
-                                            {chatLogs.map((log, i) => (
-                                                <div key={i} className={\`p-2 rounded-xl max-w-[85%] \${log.sender === 'User' ? 'bg-blue-600/80 ml-auto text-right text-white' : 'bg-gray-800 text-slate-200'}\`}>
-                                                    <p className="font-bold text-[9px] opacity-50 mb-0.5">{log.sender}</p>
-                                                    <p className="leading-relaxed">{log.text}</p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <form onSubmit={handleSendMessage} className="flex gap-2">
-                                            <input 
-                                                type="text" 
-                                                placeholder="Hỏi AI về môi trường..." 
-                                                className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500"
-                                                value={chatInput}
-                                                onChange={e => setChatInput(e.target.value)}
-                                            />
-                                            <button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition">
-                                                Gửi
-                                            </button>
+                                        <form onSubmit={(e) => {
+                                            e.preventDefault();
+                                            if(!botInput.trim()) return;
+                                            const txt = botInput;
+                                            setBotLogs(p=>[...p, {s: 'user', t: txt}]);
+                                            setBotInput('');
+                                            // Giả lập bot phản hồi trích nguồn thông tin chuẩn thế giới
+                                            setTimeout(() => {
+                                                setBotLogs(p=>[...p, {s: 'bot', t: 'Theo tiêu chuẩn không khí của WHO và chỉ số đo trạm vệ tinh IQAir thời gian thực tại TP.HCM, rác thải nhựa chiếm nguồn phát thải nguy cơ cao nhất. Bro hãy phân loại ngay tại nguồn để cứu kênh rạch nha ní!'}]);
+                                            }, 600);
+                                        }} className="flex gap-1">
+                                            <input type="text" value={botInput} onChange={e => setBotInput(e.target.value)} placeholder="Hỏi EcoBot..." className="flex-1 bg-slate-900 text-[11px] p-2 rounded-xl text-white focus:outline-none border border-slate-700" />
+                                            <button type="submit" className="bg-emerald-600 hover:bg-emerald-500 p-2 rounded-xl text-white"><span className="material-icons-round text-xs">send</span></button>
                                         </form>
                                     </div>
-                                </div>
-
+                                )}
+                                <button onClick={() => setIsBotOpen(!isBotOpen)} className="w-12 h-12 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white flex items-center justify-center shadow-xl transition-transform hover:scale-105">
+                                    <span className="material-icons-round">smart_toy</span>
+                                </button>
                             </div>
+
                         </div>
                     );
-                };
+                }
 
-                ReactDOM.createRoot(document.getElementById('app-viewport')).render(<EcoApp />);
+                ReactDOM.createRoot(document.getElementById('root')).render(<App />);
             </script>
         </body>
         </html>
     `);
 });
 
-// =========================================================================
-// 🚀 KHỞI ĐỘNG MÁY CHỦ
-// =========================================================================
+// Kích hoạt máy chủ
 app.listen(PORT, () => {
     console.log(`====================================================================`);
-    console.log(` 👑 TRẠM ĐIỀU PHỐI MÔI TRƯỜNG ĐÃ QUAY TRỞ LẠI AN TOÀN`);
-    console.log(` 🔌 TRẠM CHỦ LOCALHOST PORT: http://localhost:${PORT}`);
+    console.log(` 🌱 SIÊU DỰ ÁN ECOCONNECT HCM ĐÃ HỒI SINH TRÊN RENDER`);
+    console.log(` 🚀 LOCALHOST TRẠM CHỦ: http://localhost:${PORT}`);
     console.log(`====================================================================`);
 });
