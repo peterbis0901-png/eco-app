@@ -364,7 +364,7 @@ app.get('/', (req, res) => {
                                         {/* Checkbox Điều khoản */}
                                         <div className="flex items-start text-left gap-2.5 pt-1 pb-3 text-[13px] text-slate-400 line-height-1.4">
                                             <input type="checkbox" id="policy" className="mt-1 accent-emerald-500 h-4 w-4" checked={formData.terms} onChange={e => setFormData({...formData, terms: e.target.checked})} />
-                                            <label htmlFor="policy">Tui đã đọc và đồng ý với <span className="text-emerald-400 font-semibold cursor-pointer hover:underline" onclick={() => setShowTerms(true)}>Chính sách & Điều khoản sử dụng</span> của EcoConnect HCM.</label>
+                                            <label htmlFor="policy">Tui đã đọc và đồng ý với <span className="text-emerald-400 font-semibold cursor-pointer hover:underline" onClick={() => setShowTerms(true)}>Chính sách & Điều khoản sử dụng</span> của EcoConnect HCM.</label>
                                         </div>
 
                                         <button type="submit" className="w-full py-3.5 emerald-gradient rounded-2xl text-slate-950 font-bold text-sm uppercase tracking-wider hover:shadow-[0_0_20px_rgba(16,185,129,0.5)] transition-all flex justify-center items-center gap-2" disabled={loading}>
