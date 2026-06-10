@@ -29,7 +29,7 @@ const transporter = nodemailer.createTransport({
     secure: true, 
     auth: {
         user: 'peterbis0901@gmail.com',
-        pass: 'bzqkxdqolforczrs' // Mật khẩu ứng dụng của bro
+        pass: 'wmwskurdnlftdlko' // Mật khẩu ứng dụng của bro
     },
     tls: { rejectUnauthorized: false }
 });
