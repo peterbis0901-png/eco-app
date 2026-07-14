@@ -1,5 +1,5 @@
 const express = require('express');
-const cookieParser = require('cookieParser');
+const cookieParser = require('cookie-parser'); // Đã sửa thành 'cookie-parser' chuẩn hóa
 const jwt = require('jsonwebtoken');
 const path = require('path');
 
