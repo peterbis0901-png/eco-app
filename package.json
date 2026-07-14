@@ -1,14 +1,14 @@
 {
-  "name": "eco-app",
+  "name": "mindnote-spotlight-fullstack",
   "version": "1.0.0",
-  "description": "",
+  "description": "MindNote - Thoát khỏi hiệu ứng ánh đèn sân khấu",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
+    "cookie-parser": "^1.4.6",
     "express": "^4.19.2",
-    "cors": "^2.8.5",
-    "nodemailer": "^6.9.13"
+    "jsonwebtoken": "^9.0.2"
   }
 }
