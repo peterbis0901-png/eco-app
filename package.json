@@ -1,5 +1,14 @@
-"dependencies": {
-  "express": "^4.18.2",
-  "cookie-parser": "^1.4.6",
-  "jsonwebtoken": "^9.0.0"
+{
+  "name": "mindnote-app",
+  "version": "1.0.0",
+  "description": "So tay dien tu phan tu",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cookie-parser": "^1.4.6",
+    "jsonwebtoken": "^9.0.0"
+  }
 }
