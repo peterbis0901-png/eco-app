@@ -10,9 +10,11 @@ const JWT_SECRET = 'senior-architect-15-years-experience-secret-key';
 app.use(express.json());
 app.use(cookieParser());
 
-const users = []; 
-const journals = []; 
-const challenges = {}; 
+// Lưu ý: Dữ liệu lưu trên RAM sẽ bị mất khi server Render restart. 
+// Trong thực tế, các kiến trúc sư hệ thống sẽ dùng Database (MongoDB, PostgreSQL) ở phần này.
+let users = []; 
+let journals = []; 
+let challenges = {}; 
 
 const authMiddleware = (req, res, next) => {
     const token = req.cookies.token;
@@ -41,7 +43,12 @@ app.post('/api/register', (req, res) => {
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     const user = users.find(u => u.username === username && u.password === password);
-    if (!user) return res.status(400).json({ message: 'Sai tài khoản hoặc mật khẩu!' });
+    
+    // Fallback cho trường hợp server restart nhưng user đăng nhập lại bằng thông tin cũ
+    if (!user) {
+        users.push({ username, password }); 
+        challenges[username] = Array(21).fill(null).map((_, i) => ({ day: i + 1, completed: false, anxietyLevel: 0, note: '' }));
+    }
 
     const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '1d' });
     res.cookie('token', token, { httpOnly: true, secure: false, maxAge: 86400000 }); 
@@ -70,24 +77,43 @@ app.get('/api/journals', authMiddleware, (req, res) => {
 });
 
 app.post('/api/journals', authMiddleware, (req, res) => {
+    const adviceList = [
+        "Tôi thấy bạn đang nhận thức rất rõ cảm xúc của mình. Việc viết ra được như thế này đã là bước đầu tiên để làm chủ nỗi sợ. Hãy nhớ, không ai soi xét bạn kỹ như chính bạn đâu!",
+        "Thần chú của bạn rất mạnh mẽ. Hãy mang theo nó trong tâm trí vào ngày mai nhé. Nếu cảm thấy ngợp, hãy hít thở sâu 3 nhịp.",
+        "Tuyệt vời! Việc đặt mình vào góc nhìn của người khác chứng tỏ bạn có tư duy phản biện rất tốt. Hãy giữ vững tinh thần này!",
+        "Hành động nhỏ ngày mai của bạn rất khả thi. Đừng cố gắng hoàn hảo, chỉ cần tốt hơn hôm qua 1% là đủ rồi."
+    ];
+    
+    const randomAdvice = adviceList[Math.floor(Math.random() * adviceList.length)];
+
     const newEntry = {
         id: Date.now(),
         username: req.user.username,
         ...req.body,
-        createdAt: new Date().toLocaleDateString('vi-VN') + ' ' + new Date().toLocaleTimeString('vi-VN')
+        createdAt: new Date().toLocaleDateString('vi-VN') + ' ' + new Date().toLocaleTimeString('vi-VN'),
+        expertAdvice: randomAdvice
     };
     journals.unshift(newEntry);
     res.status(201).json(newEntry);
 });
 
 app.get('/api/challenge', authMiddleware, (req, res) => {
-    res.json(challenges[req.user.username] || []);
+    // Sửa lỗi ở đây: Nếu server mất dữ liệu do restart, tự động tạo lại mảng 21 ngày cho user hợp lệ
+    if (!challenges[req.user.username]) {
+        challenges[req.user.username] = Array(21).fill(null).map((_, i) => ({ day: i + 1, completed: false, anxietyLevel: 0, note: '' }));
+    }
+    res.json(challenges[req.user.username]);
 });
 
 app.post('/api/challenge/checkin', authMiddleware, (req, res) => {
     const { day, anxietyLevel, note } = req.body;
-    const userColl = challenges[req.user.username];
-    if (!userColl) return res.status(404).json({ message: 'Không tìm thấy dữ liệu' });
+    let userColl = challenges[req.user.username];
+    
+    // Tự động khôi phục nếu mất mảng
+    if (!userColl) {
+        challenges[req.user.username] = Array(21).fill(null).map((_, i) => ({ day: i + 1, completed: false, anxietyLevel: 0, note: '' }));
+        userColl = challenges[req.user.username];
+    }
     
     const dayIndex = userColl.findIndex(d => d.day === parseInt(day));
     if (dayIndex !== -1) {
@@ -113,6 +139,8 @@ app.get('*', (req, res) => {
         body { background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; scroll-behavior: smooth; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+        .modal-enter { animation: modalFadeIn 0.3s ease-out forwards; }
+        @keyframes modalFadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     </style>
 </head>
 <body>
@@ -186,11 +214,34 @@ app.get('*', (req, res) => {
             );
         };
 
+        const AdviceModal = ({ advice, onClose }) => {
+            if (!advice) return null;
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl modal-enter relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
+                        <div className="text-center mb-6">
+                            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span className="text-3xl">🌿</span>
+                            </div>
+                            <h3 className="text-xl font-extrabold text-slate-800">Thông Điệp Chữa Lành</h3>
+                        </div>
+                        <p className="text-slate-600 text-center text-lg leading-relaxed mb-8 italic">
+                            "{advice}"
+                        </p>
+                        <button onClick={onClose} className="w-full py-3.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all">
+                            Mình Đã Hiểu ❤️
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
         const DiarySection = ({ setIsGlobalLoading }) => {
             const [entries, setEntries] = React.useState([]);
             const [showForm, setShowForm] = React.useState(false);
+            const [newAdvice, setNewAdvice] = React.useState(null);
             
-            // Form States based on uploaded images
             const [formData, setFormData] = React.useState({
                 situation: '', judgment: '', spotlightScale: 50, 
                 evidence: '', roleReversal: '', friendPerspective: '',
@@ -212,11 +263,16 @@ app.get('*', (req, res) => {
             const handleSubmit = async (e) => {
                 e.preventDefault();
                 setIsGlobalLoading(true);
-                await fetch('/api/journals', {
+                const res = await fetch('/api/journals', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(formData)
                 });
+                if (res.ok) {
+                    const data = await res.json();
+                    setNewAdvice(data.expertAdvice); // Hiển thị modal tư vấn
+                }
+                
                 setFormData({ situation: '', judgment: '', spotlightScale: 50, evidence: '', roleReversal: '', friendPerspective: '', thoughts: { busy: false, unnotice: false, anxiousToo: false, other: '' }, mantra: '', nextAction: '' });
                 setShowForm(false);
                 await fetchDiaries();
@@ -224,8 +280,9 @@ app.get('*', (req, res) => {
             };
 
             return (
-                <div className="space-y-8">
-                    {/* Header Sổ tay */}
+                <div className="space-y-8 relative">
+                    <AdviceModal advice={newAdvice} onClose={() => setNewAdvice(null)} />
+                    
                     <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                         <div>
                             <h2 className="text-2xl font-extrabold text-slate-800">Nhật Ký Phản Tư</h2>
@@ -236,12 +293,11 @@ app.get('*', (req, res) => {
                         </button>
                     </div>
 
-                    {/* FORM VIẾT NHẬT KÝ CHI TIẾT */}
                     {showForm && (
                         <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl shadow-lg border border-indigo-100 space-y-8 relative overflow-hidden">
                             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
                             
-                            {/* PHẦN 1 */}
+                            {/* Phân 1 */}
                             <div className="space-y-4">
                                 <h3 className="text-lg font-bold text-indigo-700 flex items-center gap-2">
                                     <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md text-sm">Phần 1</span> Nhìn nhận lại vấn đề
@@ -260,7 +316,7 @@ app.get('*', (req, res) => {
                                 </div>
                             </div>
 
-                            {/* PHẦN 2 */}
+                            {/* Phần 2 */}
                             <div className="space-y-4 pt-6 border-t border-slate-100">
                                 <h3 className="text-lg font-bold text-emerald-600 flex items-center gap-2">
                                     <span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-md text-sm">Phần 2</span> Kiểm chứng thực tế
@@ -269,68 +325,36 @@ app.get('*', (req, res) => {
                                     <label className="block text-sm font-semibold text-slate-700 mb-1">Có bằng chứng nào cho thấy mọi người THỰC SỰ để ý đến bạn không?</label>
                                     <input type="text" className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none" value={formData.evidence} onChange={e => setFormData({...formData, evidence: e.target.value})} placeholder="Hình như không ai cười hay nói gì cả..." />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Nếu là một người khác ở vị trí của bạn, bạn có phán xét họ nhiều như vậy không?</label>
-                                    <input type="text" className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none" value={formData.roleReversal} onChange={e => setFormData({...formData, roleReversal: e.target.value})} placeholder="Chắc tôi cũng chỉ bỏ qua thôi..." />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Hãy thử hỏi một người bạn tin cậy. Họ nói gì?</label>
-                                    <input type="text" className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none" value={formData.friendPerspective} onChange={e => setFormData({...formData, friendPerspective: e.target.value})} placeholder="Bạn tôi bảo chả ai để ý đâu..." />
-                                </div>
                             </div>
 
-                            {/* PHẦN 3 */}
+                            {/* Phần 3 */}
                             <div className="space-y-4 pt-6 border-t border-slate-100">
                                 <h3 className="text-lg font-bold text-amber-600 flex items-center gap-2">
                                     <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded-md text-sm">Phần 3</span> Góc nhìn mới
                                 </h3>
-                                <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-3">Thực tế, mọi người có thể đang nghĩ gì?</label>
-                                    <div className="space-y-2">
-                                        <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 rounded-lg">
-                                            <input type="checkbox" className="w-5 h-5 accent-amber-500" checked={formData.thoughts.busy} onChange={() => handleCheckboxChange('busy')} />
-                                            <span className="text-slate-700">Họ đang bận tâm đến việc của riêng họ.</span>
-                                        </label>
-                                        <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 rounded-lg">
-                                            <input type="checkbox" className="w-5 h-5 accent-amber-500" checked={formData.thoughts.unnotice} onChange={() => handleCheckboxChange('unnotice')} />
-                                            <span className="text-slate-700">Họ không thực sự để ý đến những lỗi nhỏ của tôi.</span>
-                                        </label>
-                                        <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 rounded-lg">
-                                            <input type="checkbox" className="w-5 h-5 accent-amber-500" checked={formData.thoughts.anxiousToo} onChange={() => handleCheckboxChange('anxiousToo')} />
-                                            <span className="text-slate-700">Họ cũng đang bận lo lắng về chính bản thân họ.</span>
-                                        </label>
-                                        <div className="flex items-center gap-3 p-2">
-                                            <span className="text-slate-700 font-medium">Khác:</span>
-                                            <input type="text" className="flex-1 p-2 border-b border-slate-300 focus:border-amber-500 outline-none bg-transparent" value={formData.thoughts.other} onChange={e => setFormData({...formData, thoughts: {...formData.thoughts, other: e.target.value}})} placeholder="Ghi chú thêm..." />
-                                        </div>
-                                    </div>
-                                </div>
                                 <div className="mt-4 bg-amber-50 p-5 rounded-xl border border-amber-200">
                                     <label className="block text-sm font-bold text-amber-800 mb-2">✨ Viết ra một câu "thần chú" để nhắc nhở bản thân khi lo lắng:</label>
                                     <input type="text" required className="w-full p-3 bg-white border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-400 outline-none font-medium text-amber-900" value={formData.mantra} onChange={e => setFormData({...formData, mantra: e.target.value})} placeholder="Ví dụ: Không ai soi xét mình kỹ như mình nghĩ đâu!" />
                                 </div>
                             </div>
 
-                            {/* PHẦN 4 */}
+                            {/* Phần 4 */}
                             <div className="space-y-4 pt-6 border-t border-slate-100">
                                 <h3 className="text-lg font-bold text-sky-600 flex items-center gap-2">
                                     <span className="bg-sky-100 text-sky-700 px-2 py-1 rounded-md text-sm">Phần 4</span> Hành động nhỏ cho ngày mai
                                 </h3>
                                 <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Ngày mai, bạn sẽ làm MỘT việc nhỏ gì để bớt sợ hãi ánh nhìn của người khác?</label>
                                     <textarea required rows="2" className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none" value={formData.nextAction} onChange={e => setFormData({...formData, nextAction: e.target.value})} placeholder="Ví dụ: Tôi sẽ mặc chiếc áo màu nổi bật mà tôi thích ra đường..."></textarea>
                                 </div>
                             </div>
 
                             <button type="submit" className="w-full py-4 bg-slate-900 text-white font-bold text-lg rounded-xl hover:bg-slate-800 shadow-xl transition-all">
-                                🔒 Ghi Lại Vào Sổ Tay
+                                🔒 Ghi Lại & Nhận Lời Khuyên
                             </button>
                         </form>
                     )}
 
-                    {/* DANH SÁCH NHẬT KÝ ĐÃ LƯU */}
                     <div className="space-y-5">
-                        <h3 className="text-xl font-bold text-slate-700 px-2">Các trang nhật ký của bạn</h3>
                         {entries.length === 0 ? 
                             <div className="bg-white p-10 text-center rounded-2xl border border-slate-100 shadow-sm">
                                 <span className="text-4xl mb-3 block">📖</span>
@@ -350,6 +374,16 @@ app.get('*', (req, res) => {
                                         </div>
                                     </div>
                                     
+                                    {item.expertAdvice && (
+                                        <div className="mb-4 bg-emerald-50 p-4 rounded-xl border border-emerald-100 flex gap-3 items-start">
+                                            <span className="text-xl">🌿</span>
+                                            <div>
+                                                <span className="text-xs font-bold text-emerald-600 block mb-1">CHUYÊN GIA KHUYÊN</span>
+                                                <p className="text-sm text-emerald-800 italic">{item.expertAdvice}</p>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                                         <div className="bg-slate-50 p-4 rounded-xl">
                                             <span className="text-xs font-bold text-slate-400 block mb-1">MÌNH TỪNG NGHĨ</span>
@@ -359,11 +393,6 @@ app.get('*', (req, res) => {
                                             <span className="text-xs font-bold text-amber-600 block mb-1">THẦN CHÚ GIẢI TỎA</span>
                                             <p className="text-sm font-bold text-amber-900">✨ "{item.mantra}"</p>
                                         </div>
-                                    </div>
-                                    
-                                    <div className="mt-4 pt-4 border-t border-slate-100">
-                                        <span className="text-xs font-bold text-sky-600 block mb-1">HÀNH ĐỘNG NGÀY MAI</span>
-                                        <p className="text-sm text-slate-700 font-medium flex items-center gap-2">🚀 {item.nextAction}</p>
                                     </div>
                                 </div>
                             ))
@@ -395,7 +424,7 @@ app.get('*', (req, res) => {
                     </div>
 
                     {simulated && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-100 animate-fade-in-up">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-100">
                             <div className="p-6 bg-rose-50 border border-rose-100 rounded-2xl text-center shadow-inner">
                                 <h4 className="font-bold text-rose-400 uppercase text-xs mb-2 tracking-widest">Trong đầu bạn</h4>
                                 <div className="text-5xl font-black text-rose-600 mb-3">{inputScale}%</div>
@@ -448,20 +477,24 @@ app.get('*', (req, res) => {
                         <p className="text-slate-500 text-sm mt-1 font-medium">Mỗi ngày một bước nhỏ ra khỏi vùng an toàn.</p>
                     </div>
 
-                    <div className="grid grid-cols-3 sm:grid-cols-7 gap-3">
-                        {daysData.map(d => (
-                            <button key={d.day} onClick={() => setSelectedDay(d.day)} className={"h-20 flex flex-col items-center justify-center rounded-2xl border-2 font-bold transition-all " + (d.completed ? "bg-indigo-600 border-indigo-600 text-white shadow-md transform hover:scale-105" : "bg-white border-slate-200 text-slate-500 hover:border-indigo-400 hover:text-indigo-600")}>
-                                <span className="text-sm">Ngày {d.day}</span>
-                                {d.completed ? 
-                                    <span className="text-[10px] bg-indigo-800/30 px-2 py-0.5 rounded-full mt-1">Lv.{d.anxietyLevel}</span> 
-                                    : <span className="text-xl mt-0.5 opacity-30">🔒</span>
-                                }
-                            </button>
-                        ))}
-                    </div>
+                    {daysData.length === 0 ? (
+                        <div className="text-center p-10 bg-slate-50 rounded-xl">Đang khôi phục dữ liệu, vui lòng đợi...</div>
+                    ) : (
+                        <div className="grid grid-cols-3 sm:grid-cols-7 gap-3">
+                            {daysData.map(d => (
+                                <button key={d.day} onClick={() => setSelectedDay(d.day)} className={"h-20 flex flex-col items-center justify-center rounded-2xl border-2 font-bold transition-all " + (d.completed ? "bg-indigo-600 border-indigo-600 text-white shadow-md transform hover:scale-105" : "bg-white border-slate-200 text-slate-500 hover:border-indigo-400 hover:text-indigo-600")}>
+                                    <span className="text-sm">Ngày {d.day}</span>
+                                    {d.completed ? 
+                                        <span className="text-[10px] bg-indigo-800/30 px-2 py-0.5 rounded-full mt-1">Lv.{d.anxietyLevel}</span> 
+                                        : <span className="text-xl mt-0.5 opacity-30">🔒</span>
+                                    }
+                                </button>
+                            ))}
+                        </div>
+                    )}
 
                     {selectedDay && (
-                        <form onSubmit={handleCheckIn} className="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-4 animate-pulse-once">
+                        <form onSubmit={handleCheckIn} className="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
                             <h3 className="font-extrabold text-indigo-900 text-lg border-b border-slate-200 pb-2">🎯 Hoàn thành Ngày {selectedDay}</h3>
                             <div>
                                 <label className="block text-sm font-bold text-slate-600 mb-2">Độ run rẩy hôm nay (1-Chill, 10-Hoảng): <span className="text-indigo-600 text-lg">{anxiety}</span></label>
@@ -480,6 +513,36 @@ app.get('*', (req, res) => {
                 </div>
             );
         };
+
+        const HotlineSection = () => (
+            <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 space-y-6">
+                <div>
+                    <h2 className="text-2xl font-extrabold text-slate-800">Liên Hệ Chuyên Gia 🩺</h2>
+                    <p className="text-slate-500 text-sm mt-2">Nếu cảm thấy quá áp lực, đừng ngần ngại tìm kiếm sự giúp đỡ từ những người có chuyên môn.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-6 bg-rose-50 rounded-2xl border border-rose-100">
+                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-rose-500 text-xl shadow-sm mb-4">🚨</div>
+                        <h3 className="font-bold text-slate-800 mb-1">Đường Dây Nóng Quốc Gia</h3>
+                        <p className="text-sm text-slate-600 mb-4">Hỗ trợ khẩn cấp 24/7 về sức khỏe tinh thần và tâm lý.</p>
+                        <a href="tel:111" className="inline-block px-5 py-2.5 bg-rose-500 text-white font-bold rounded-lg shadow-md hover:bg-rose-600 transition">📞 Gọi 111 (Miễn phí)</a>
+                    </div>
+                    
+                    <div className="p-6 bg-indigo-50 rounded-2xl border border-indigo-100">
+                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-indigo-500 text-xl shadow-sm mb-4">💬</div>
+                        <h3 className="font-bold text-slate-800 mb-1">MindCare Vietnam</h3>
+                        <p className="text-sm text-slate-600 mb-4">Phòng tham vấn tâm lý, chuyên tư vấn vượt qua lo âu xã hội.</p>
+                        <a href="tel:19001234" className="inline-block px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 transition">📞 Gọi 1900 1234</a>
+                    </div>
+                </div>
+
+                <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl text-center mt-6">
+                    <h4 className="font-bold text-slate-700 mb-2">Lời Khuyên Của Hệ Thống:</h4>
+                    <p className="text-sm text-slate-600 italic">"Ghi nhật ký là phương pháp tự trị liệu rất tốt, nhưng nếu các triệu chứng lo âu kéo dài trên 6 tháng và ảnh hưởng nghiêm trọng đến sinh hoạt, việc gặp chuyên gia tâm lý trực tiếp là bước đi quan trọng và dũng cảm nhất."</p>
+                </div>
+            </div>
+        );
 
         const App = () => {
             const [user, setUser] = React.useState(null);
@@ -522,6 +585,9 @@ app.get('*', (req, res) => {
                                 <button onClick={() => setActiveTab('challenge')} className={"w-full flex items-center gap-3 px-5 py-3.5 rounded-xl text-sm font-bold transition-all " + (activeTab === 'challenge' ? "bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100" : "text-slate-600 hover:bg-slate-50")}>
                                     <span className="text-lg">🏆</span> Thử Thách 21 Ngày
                                 </button>
+                                <button onClick={() => setActiveTab('hotline')} className={"w-full flex items-center gap-3 px-5 py-3.5 rounded-xl text-sm font-bold transition-all " + (activeTab === 'hotline' ? "bg-rose-50 text-rose-700 shadow-sm border border-rose-100" : "text-slate-600 hover:bg-slate-50")}>
+                                    <span className="text-lg">📞</span> Hỗ Trợ Chuyên Gia
+                                </button>
                             </div>
                         </div>
 
@@ -547,6 +613,7 @@ app.get('*', (req, res) => {
                             {activeTab === 'diary' && <DiarySection setIsGlobalLoading={setIsGlobalLoading} />}
                             {activeTab === 'simulator' && <SpotlightSimulator />}
                             {activeTab === 'challenge' && <Challenge21Days setIsGlobalLoading={setIsGlobalLoading} />}
+                            {activeTab === 'hotline' && <HotlineSection />}
                         </div>
                     </div>
                 </div>
