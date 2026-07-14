@@ -1,5 +1,5 @@
 const express = require('express');
-const cookieParser = require('cookie-parser');
+const cookieParser = require('cookieParser');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 
@@ -7,16 +7,16 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = 'senior-architect-15-years-experience-secret-key';
 
-// Middleware cấu hình theo tiêu chuẩn bảo mật cao
+// Middleware cấu hình hệ thống
 app.use(express.json());
 app.use(cookieParser());
 
-// Mock Database lưu trong bộ nhớ RAM hệ thống
+// Bộ nhớ RAM tạm thời thay thế Database
 const users = []; 
 const journals = []; 
-const challenges = {}; // key: username, value: array của 21 ngày
+const challenges = {}; 
 
-// Middleware kiểm tra quyền truy cập (HttpOnly Cookie Auth)
+// Middleware xác thực người dùng bằng HttpOnly Cookie
 const authMiddleware = (req, res, next) => {
     const token = req.cookies.token;
     if (!token) return res.status(401).json({ message: 'Chưa đăng nhập!' });
@@ -25,13 +25,12 @@ const authMiddleware = (req, res, next) => {
         req.user = decoded;
         next();
     } catch (err) {
-        return res.status(401).json({ message: 'Token hết hạn hoặc không hợp lệ!' });
+        return res.status(401).json({ message: 'Token không hợp lệ!' });
     }
 };
 
 // ==================== BACKEND API ROUTES ====================
 
-// 1. Đăng ký tài khoản
 app.post('/api/register', (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ message: 'Vui lòng điền đủ thông tin!' });
@@ -42,24 +41,21 @@ app.post('/api/register', (req, res) => {
     res.status(201).json({ message: 'Đăng ký thành công!' });
 });
 
-// 2. Đăng nhập & thiết lập HttpOnly Cookie chống hacker XSS
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     const user = users.find(u => u.username === username && u.password === password);
     if (!user) return res.status(400).json({ message: 'Sai tài khoản hoặc mật khẩu!' });
 
     const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '1d' });
-    res.cookie('token', token, { httpOnly: true, secure: false, maxAge: 86400000 }); // Đổi secure: true nếu chạy HTTPS thực tế
+    res.cookie('token', token, { httpOnly: true, secure: false, maxAge: 86400000 }); 
     res.json({ username });
 });
 
-// 3. Đăng xuất xóa cookie
 app.post('/api/logout', (req, res) => {
     res.clearCookie('token');
     res.json({ message: 'Đã đăng xuất!' });
 });
 
-// 4. Lấy thông tin user hiện tại
 app.get('/api/user', (req, res) => {
     const token = req.cookies.token;
     if (!token) return res.status(401).json({ message: 'Chưa đăng nhập' });
@@ -71,13 +67,11 @@ app.get('/api/user', (req, res) => {
     }
 });
 
-// 5. Lấy danh sách Nhật ký (Sổ tay)
 app.get('/api/journals', authMiddleware, (req, res) => {
     const userJournals = journals.filter(j => j.username === req.user.username);
     res.json(userJournals);
 });
 
-// 6. Thêm bài viết nhật ký mới
 app.post('/api/journals', authMiddleware, (req, res) => {
     const { title, content, spotlightScale } = req.body;
     const newEntry = {
@@ -92,16 +86,14 @@ app.post('/api/journals', authMiddleware, (req, res) => {
     res.status(201).json(newEntry);
 });
 
-// 7. Lấy thông tin Thử thách 21 ngày
 app.get('/api/challenge', authMiddleware, (req, res) => {
     res.json(challenges[req.user.username] || []);
 });
 
-// 8. Check-in thử thách ngày mới
 app.post('/api/challenge/checkin', authMiddleware, (req, res) => {
     const { day, anxietyLevel, note } = req.body;
     const userColl = challenges[req.user.username];
-    if (!userColl) return res.status(404).json({ message: 'Không tìm thấy dữ liệu thử thách' });
+    if (!userColl) return res.status(404).json({ message: 'Không tìm thấy dữ liệu' });
     
     const dayIndex = userColl.findIndex(d => d.day === parseInt(day));
     if (dayIndex !== -1) {
@@ -118,7 +110,7 @@ app.get('*', (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MindNote - Thiết kế Vượt Qua Spotlight Effect</title>
+    <title>MindNote - Sổ Tay Điện Tử Phản Tư</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
@@ -131,9 +123,9 @@ app.get('*', (req, res) => {
     <div id="root"></div>
 
     <script type="text/babel">
-        // --- 1. GLOBAL LOADING SCREEN COMPONENT ---
+        // 1. LOADING SCREEN GLOBAL
         const LoadingScreen = ({ message = "Hệ thống đang đồng bộ dữ liệu..." }) => (
-            <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900 bg-opacity-75 backdrop-blur-md transition-all">
+            <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900 bg-opacity-75 backdrop-blur-md">
                 <div className="relative flex items-center justify-center">
                     <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                     <span className="absolute text-xl">🧠</span>
@@ -142,7 +134,7 @@ app.get('*', (req, res) => {
             </div>
         );
 
-        // --- 2. AUTHENTICATION COMPONENT (LOGIN / REGISTER) ---
+        // 2. FORM ĐĂNG NHẬP / ĐĂNG KÝ
         const AuthPage = ({ onAuthSuccess, setIsGlobalLoading }) => {
             const [isLogin, setIsLogin] = React.useState(true);
             const [username, setUsername] = React.useState('');
@@ -168,7 +160,7 @@ app.get('*', (req, res) => {
                     if (isLogin) {
                         onAuthSuccess(data.username);
                     } else {
-                        alert('Đăng ký tài khoản thành công! Hãy tiến hành đăng nhập.');
+                        alert('Đăng ký thành công! Mời bạn đăng nhập.');
                         setIsLogin(true);
                     }
                 } catch (err) {
@@ -183,12 +175,12 @@ app.get('*', (req, res) => {
                     <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
                         <div className="text-center mb-6">
                             <h1 className="text-3xl font-extrabold text-indigo-600">MindNote 🧠</h1>
-                            <p className="text-slate-500 text-sm mt-1">Đừng để "Hiệu ứng ánh đèn sân khấu" làm bạn lo lắng</p>
+                            <p className="text-slate-500 text-sm mt-1">Sổ tay vượt qua Hiệu ứng ánh đèn sân khấu</p>
                         </div>
                         
                         <div className="flex bg-slate-100 p-1 rounded-lg mb-6">
-                            <button className={\`flex-1 py-2 rounded-md font-medium text-sm transition-all \${isLogin ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}\`} onClick={() => setIsLogin(true)}>Đăng Nhập</button>
-                            <button className={\`flex-1 py-2 rounded-md font-medium text-sm transition-all \${!isLogin ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}\`} onClick={() => setIsLogin(false)}>Đăng Ký</button>
+                            <button type="button" className={"flex-1 py-2 rounded-md font-medium text-sm transition-all " + (isLogin ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500")} onClick={() => setIsLogin(true)}>Đăng Nhập</button>
+                            <button type="button" className={"flex-1 py-2 rounded-md font-medium text-sm transition-all " + (!isLogin ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500")} onClick={() => setIsLogin(false)}>Đăng Ký</button>
                         </div>
 
                         {error && <div className="p-3 bg-rose-50 border border-rose-200 text-rose-600 text-sm rounded-lg mb-4">{error}</div>}
@@ -196,14 +188,14 @@ app.get('*', (req, res) => {
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
                                 <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Tên tài khoản</label>
-                                <input type="text" required className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" value={username} onChange={e => setUsername(e.target.value)} placeholder="username_cua_ban" />
+                                <input type="text" required className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" value={username} onChange={e => setUsername(e.target.value)} placeholder="Tên của bạn..." />
                             </div>
                             <div>
                                 <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Mật khẩu</label>
                                 <input type="password" required className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
                             </div>
                             <button type="submit" className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition-all">
-                                {isLogin ? 'Vào Hệ Thống' : 'Tạo Tài Khoản Mới'}
+                                {isLogin ? 'Vào Hệ Thống' : 'Tạo Tài Khoản'}
                             </button>
                         </form>
                     </div>
@@ -211,7 +203,7 @@ app.get('*', (req, res) => {
             );
         };
 
-        // --- 3. CORE NOTEBOOK / DIARY COMPONENT ---
+        // 3. CHỨC NĂNG SỔ TAY / NHẬT KÝ
         const DiarySection = ({ setIsGlobalLoading }) => {
             const [entries, setEntries] = React.useState([]);
             const [title, setTitle] = React.useState('');
@@ -233,7 +225,7 @@ app.get('*', (req, res) => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ title, content, spotlightScale: scale })
                 });
-                setTitle(''); setContent(''); setScale(50);
+                setTitle(''); setContent(''); setScale(70);
                 await fetchDiaries();
                 setIsGlobalLoading(false);
             };
@@ -241,29 +233,29 @@ app.get('*', (req, res) => {
             return (
                 <div className="space-y-6">
                     <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 space-y-4">
-                        <h2 className="text-xl font-bold text-slate-800">Ghi lại suy nghĩ / Sự kiện lo lắng hằng ngày</h2>
-                        <input type="text" required placeholder="Hôm nay có sự kiện gì làm bạn bận tâm không?" className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" value={title} onChange={e => setTitle(e.target.value)} />
-                        <textarea required placeholder="Mô tả chi tiết cảm xúc của bạn tại thời điểm đó..." rows="3" className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" value={content} onChange={e => setContent(e.target.value)}></textarea>
+                        <h2 className="text-xl font-bold text-slate-800">Viết Nhật Ký Phản Tư</h2>
+                        <input type="text" required placeholder="Sự kiện tiêu điểm khiến bạn lo lắng hôm nay?" className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" value={title} onChange={e => setTitle(e.target.value)} />
+                        <textarea required placeholder="Mô tả chi tiết cảm xúc hoặc hành động lúc đó..." rows="3" className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" value={content} onChange={e => setContent(e.target.value)}></textarea>
                         
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Mức độ bạn nghĩ mọi người chú ý đến bạn lúc đó: <span className="text-indigo-600 font-bold">{scale}%</span></label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Mức độ bạn nghĩ mọi người phán xét bạn: <span className="text-indigo-600 font-bold">{scale}%</span></label>
                             <input type="range" min="0" max="100" className="w-full accent-indigo-600" value={scale} onChange={e => setScale(e.target.value)} />
                         </div>
-                        <button type="submit" className="px-5 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition shadow-sm">Lưu Vào Sổ Tay Điện Tử</button>
+                        <button type="submit" className="px-5 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition shadow-sm">Lưu Vào Nhật Ký</button>
                     </form>
 
                     <div className="space-y-4">
-                        <h3 className="text-lg font-bold text-slate-700">Lịch sử nhật ký phản tư</h3>
-                        {entries.length === 0 ? <p className="text-slate-400 italic">Chưa có bài viết nào được ghi nhận.</p> : 
+                        <h3 className="text-lg font-bold text-slate-700">Lịch sử ghi chép</h3>
+                        {entries.length === 0 ? <p className="text-slate-400 italic">Chưa có nhật ký nào.</p> : 
                             entries.map(item => (
-                                <div key={item.id} className="bg-white p-5 rounded-xl shadow-xs border border-slate-100">
+                                <div key={item.id} className="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
                                     <div className="flex justify-between items-start mb-2">
                                         <h4 className="font-bold text-slate-800 text-lg">{item.title}</h4>
                                         <span className="text-xs text-slate-400 font-medium">{item.createdAt}</span>
                                     </div>
                                     <p className="text-slate-600 text-sm whitespace-pre-line mb-3">{item.content}</p>
                                     <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 text-xs px-2.5 py-1 rounded-full font-medium">
-                                        <span>Đánh giá Spotlight: Đã nghĩ {item.spotlightScale}% ➔ Thực tế: ~5%</span>
+                                        <span>Bạn ước tính: {item.spotlightScale}% | Thực tế xã hội: ~5%</span>
                                     </div>
                                 </div>
                             ))
@@ -273,7 +265,7 @@ app.get('*', (req, res) => {
             );
         };
 
-        // --- 4. SPOTLIGHT SIMULATOR COMPONENT ---
+        // 4. BỘ MÔ PHỎNG SPOTLIGHT SIMULATOR
         const SpotlightSimulator = () => {
             const [inputScale, setInputScale] = React.useState(80);
             const [simulated, setSimulated] = React.useState(false);
@@ -281,31 +273,31 @@ app.get('*', (req, res) => {
             return (
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 space-y-6">
                     <div>
-                        <h2 className="text-xl font-bold text-slate-800">Bộ Mô Phỏng Tâm Lý Spotlight</h2>
-                        <p className="text-slate-500 text-sm mt-1">Kéo thanh trượt để xem sự khác biệt khổng lồ giữa "Suy nghĩ của bạn" và "Thực tế xã hội".</p>
+                        <h2 className="text-xl font-bold text-slate-800">Spotlight Simulator</h2>
+                        <p className="text-slate-500 text-sm mt-1">Trực quan hóa sự chênh lệch nhận thức.</p>
                     </div>
 
                     <div className="bg-slate-50 p-4 rounded-xl">
-                        <label className="block font-medium text-slate-700 mb-2 text-sm">Bạn nghĩ có bao nhiêu % số người xung quanh sẽ nhớ vết bẩn trên áo hoặc lỗi nói vấp của bạn?</label>
+                        <label className="block font-medium text-slate-700 mb-2 text-sm">Bạn nghĩ bao nhiêu phần trăm đám đông chú ý đến lỗi sai của bạn?</label>
                         <input type="range" min="10" max="100" className="w-full accent-teal-600" value={inputScale} onChange={e => { setInputScale(e.target.value); setSimulated(false); }} />
                         <div className="text-right text-teal-600 font-extrabold text-xl mt-1">{inputScale}%</div>
                     </div>
 
                     <div className="text-center">
-                        <button onClick={() => setSimulated(true)} className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg shadow-sm transition">Chạy Thực Nghiệm Khoa Học</button>
+                        <button onClick={() => setSimulated(true)} className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg shadow-sm transition">Chạy Mô Phỏng Thực Tế</button>
                     </div>
 
                     {simulated && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100 animate-fadeIn">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
                             <div className="p-4 bg-rose-50 text-rose-700 rounded-xl">
-                                <h4 className="font-bold uppercase text-xs mb-1">Ảo tưởng của bộ não</h4>
+                                <h4 className="font-bold uppercase text-xs mb-1">Bạn cảm thấy</h4>
                                 <div className="text-3xl font-black mb-2">{inputScale}%</div>
-                                <p className="text-xs leading-relaxed">Bạn cảm giác như có một ánh đèn sân khấu (Spotlight) rọi thẳng vào mình, bắt lỗi từng hành động nhỏ nhất của bạn.</p>
+                                <p className="text-xs">Cảm giác như mọi người đang nhìn chằm chằm và đánh giá bạn.</p>
                             </div>
                             <div className="p-4 bg-emerald-50 text-emerald-700 rounded-xl">
-                                <h4 className="font-bold uppercase text-xs mb-1">Thực tế nghiên cứu (Gilovich)</h4>
-                                <div className="text-3xl font-black mb-2">~ 4.8%</div>
-                                <p className="text-xs leading-relaxed">Sự thật là ai cũng bận rộn với "ánh đèn" của riêng họ. Hầu hết mọi người hoàn toàn không để ý hoặc quên ngay sau 10 giây!</p>
+                                <h4 className="font-bold uppercase text-xs mb-1">Thực tế cuộc sống</h4>
+                                <div className="text-3xl font-black mb-2">~ 5%</div>
+                                <p className="text-xs">Mọi người chỉ tập trung vào chính họ và hầu như không bận tâm đến bạn.</p>
                             </div>
                         </div>
                     )}
@@ -313,7 +305,7 @@ app.get('*', (req, res) => {
             );
         };
 
-        // --- 5. 21-DAY CHALLENGE COMPONENT ---
+        // 5. THỬ THÁCH 21 NGÀY
         const Challenge21Days = ({ setIsGlobalLoading }) => {
             const [daysData, setDaysData] = React.useState([]);
             const [selectedDay, setSelectedDay] = React.useState(null);
@@ -346,13 +338,13 @@ app.get('*', (req, res) => {
             return (
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 space-y-6">
                     <div>
-                        <h2 className="text-xl font-bold text-slate-800">Thử Thách 21 Ngày Tự Tin</h2>
-                        <p className="text-slate-500 text-sm mt-1">Xây dựng thói quen phản tư, giảm dần mức độ tự ti mỗi ngày.</p>
+                        <h2 className="text-xl font-bold text-slate-800">Thử Thách 21 Ngày Vượt Ngại</h2>
+                        <p className="text-slate-500 text-sm mt-1">Từng bước tích lũy sự tự tin mỗi ngày.</p>
                     </div>
 
                     <div className="grid grid-cols-3 sm:grid-cols-7 gap-3">
                         {daysData.map(d => (
-                            <button key={d.day} onClick={() => setSelectedDay(d.day)} className={\`h-16 flex flex-col items-center justify-center rounded-xl border font-bold text-sm transition-all \${d.completed ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-indigo-300'}\`}>
+                            <button key={d.day} onClick={() => setSelectedDay(d.day)} className={"h-16 flex flex-col items-center justify-center rounded-xl border font-bold text-sm transition-all " + (d.completed ? "bg-indigo-600 border-indigo-600 text-white" : "bg-slate-50 border-slate-200 text-slate-700 hover:border-indigo-300")}>
                                 <span>Ngày {d.day}</span>
                                 {d.completed && <span className="text-[10px] bg-indigo-500 px-1 rounded mt-0.5">Lv.{d.anxietyLevel}</span>}
                             </button>
@@ -360,16 +352,16 @@ app.get('*', (req, res) => {
                     </div>
 
                     {selectedDay && (
-                        <form onSubmit={handleCheckIn} className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3 animate-fadeIn">
-                            <h3 className="font-bold text-slate-800 text-sm">Cập nhật tiến độ Ngày {selectedDay}</h3>
+                        <form onSubmit={handleCheckIn} className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                            <h3 className="font-bold text-slate-800 text-sm">Check-in Ngày {selectedDay}</h3>
                             <div>
-                                <label className="block text-xs font-medium text-slate-600 mb-1">Mức độ lo lắng xã hội hôm nay (1 - Tự tin nhất, 10 - Lo lắng nhất): <span className="text-indigo-600 font-bold">{anxiety}</span></label>
-                                <input type="range" min="1" max="100" className="w-full accent-indigo-600" value={anxiety} onChange={e => setAnxiety(e.target.value)} />
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Mức độ lo lắng hôm nay (1-Thấp, 10-Cao): <span className="text-indigo-600 font-bold">{anxiety}</span></label>
+                                <input type="range" min="1" max="10" className="w-full accent-indigo-600" value={anxiety} onChange={e => setAnxiety(e.target.value)} />
                             </div>
-                            <input type="text" required placeholder="Hôm nay bạn đã vượt qua nỗi sợ đám đông thế nào?" className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none" value={note} onChange={e => setNote(e.target.value)} />
+                            <input type="text" required placeholder="Hôm nay bạn đã làm được điều gì tự tin?" className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none" value={note} onChange={e => setNote(e.target.value)} />
                             <div className="flex gap-2 justify-end">
                                 <button type="button" onClick={() => setSelectedDay(null)} className="px-3 py-1.5 text-xs text-slate-500 font-medium">Hủy</button>
-                                <button type="submit" className="px-4 py-1.5 text-xs bg-indigo-600 text-white font-medium rounded-lg">Hoàn Thành Check-in</button>
+                                <button type="submit" className="px-4 py-1.5 text-xs bg-indigo-600 text-white font-medium rounded-lg">Xác Nhận</button>
                             </div>
                         </form>
                     )}
@@ -377,14 +369,13 @@ app.get('*', (req, res) => {
             );
         };
 
-        // --- MAIN APP CONTROLLER COMPONENT ---
+        // ĐIỀU HƯỚNG MAIN APP
         const App = () => {
             const [user, setUser] = React.useState(null);
             const [activeTab, setActiveTab] = React.useState('diary');
             const [isGlobalLoading, setIsGlobalLoading] = React.useState(true);
 
             React.useEffect(() => {
-                // Kiểm tra trạng thái session khi tải trang đầu tiên
                 fetch('/api/user')
                     .then(res => res.ok ? res.json() : null)
                     .then(data => { if(data) setUser(data.username); })
@@ -398,32 +389,30 @@ app.get('*', (req, res) => {
                 setIsGlobalLoading(false);
             };
 
-            if (isGlobalLoading) return <LoadingScreen message="Đang khởi tạo hệ thống..." />;
+            if (isGlobalLoading) return <LoadingScreen message="Đang kết nối hệ thống..." />;
             if (!user) return <AuthPage onAuthSuccess={setUser} setIsGlobalLoading={setIsGlobalLoading} />;
 
             return (
                 <div className="min-h-screen flex flex-col md:flex-row">
-                    {/* Thanh Điều Hướng Trái (Sidebar Layout) */}
                     <div className="w-full md:w-64 bg-slate-900 text-slate-200 p-6 flex flex-col justify-between">
                         <div className="space-y-6">
                             <div>
                                 <h2 className="text-2xl font-black text-indigo-400">MindNote 🧠</h2>
-                                <p className="text-[10px] text-slate-400 font-mono mt-0.5">Hệ thống phân tích Spotlight</p>
+                                <p className="text-[10px] text-slate-400 font-mono mt-0.5">Kiến trúc quản lý nhận thức</p>
                             </div>
                             <div className="space-y-1">
-                                <button onClick={() => setActiveTab('diary')} className={\`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition \${activeTab === 'diary' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800'}\`}>Sổ Tay Nhật Ký</button>
-                                <button onClick={() => setActiveTab('simulator')} className={\`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition \` + (activeTab === 'simulator' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800')}>Bộ Mô Phỏng Tâm Lý</button>
-                                <button onClick={() => setActiveTab('challenge')} className={\`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition \` + (activeTab === 'challenge' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800')}>Thử Thách 21 Ngày</button>
+                                <button onClick={() => setActiveTab('diary')} className={"w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition " + (activeTab === 'diary' ? "bg-indigo-600 text-white" : "hover:bg-slate-800")}>Sổ Tay Nhật Ký</button>
+                                <button onClick={() => setActiveTab('simulator')} className={"w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition " + (activeTab === 'simulator' ? "bg-indigo-600 text-white" : "hover:bg-slate-800")}>Bộ Mô Phỏng Tâm Lý</button>
+                                <button onClick={() => setActiveTab('challenge')} className={"w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition " + (activeTab === 'challenge' ? "bg-indigo-600 text-white" : "hover:bg-slate-800")}>Thử Thách 21 Ngày</button>
                             </div>
                         </div>
 
                         <div className="pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                            <span>Chào, <b>{user}</b></span>
+                            <span>User: <b>{user}</b></span>
                             <button onClick={handleLogout} className="text-rose-400 hover:underline">Đăng xuất</button>
                         </div>
                     </div>
 
-                    {/* Vùng Hiển Thị Nội Dung Chính (Main Window) */}
                     <div className="flex-1 p-6 md:p-10 max-w-4xl mx-auto w-full">
                         {activeTab === 'diary' && <DiarySection setIsGlobalLoading={setIsGlobalLoading} />}
                         {activeTab === 'simulator' && <SpotlightSimulator />}
@@ -440,7 +429,6 @@ app.get('*', (req, res) => {
     `);
 });
 
-// Khởi chạy Server
 app.listen(PORT, () => {
-    console.log(\`Server của lập trình viên 15 năm kinh nghiệm đang chạy mượt mà tại cổng \${PORT}\`);
+    console.log("Server dang chay muot ma tai cong: " + PORT);
 });
