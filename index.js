@@ -1,17 +1,22 @@
+require('dotenv').config();
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const path = require('path');
+const multer = require('multer');
+const axios = require('axios');
+const FormData = require('form-data');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = 'senior-architect-15-years-experience-secret-key';
 
+// Cấu hình Multer lưu file ghi âm trên RAM
+const upload = multer({ storage: multer.memoryStorage() });
+
 app.use(express.json());
 app.use(cookieParser());
 
-// Lưu ý: Dữ liệu lưu trên RAM sẽ bị mất khi server Render restart. 
-// Trong thực tế, các kiến trúc sư hệ thống sẽ dùng Database (MongoDB, PostgreSQL) ở phần này.
 let users = []; 
 let journals = []; 
 let challenges = {}; 
@@ -44,7 +49,6 @@ app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     const user = users.find(u => u.username === username && u.password === password);
     
-    // Fallback cho trường hợp server restart nhưng user đăng nhập lại bằng thông tin cũ
     if (!user) {
         users.push({ username, password }); 
         challenges[username] = Array(21).fill(null).map((_, i) => ({ day: i + 1, completed: false, anxietyLevel: 0, note: '' }));
@@ -78,14 +82,12 @@ app.get('/api/journals', authMiddleware, (req, res) => {
 
 app.post('/api/journals', authMiddleware, (req, res) => {
     const adviceList = [
-        "Tôi thấy bạn đang nhận thức rất rõ cảm xúc của mình. Việc viết ra được như thế này đã là bước đầu tiên để làm chủ nỗi sợ. Hãy nhớ, không ai soi xét bạn kỹ như chính bạn đâu!",
-        "Thần chú của bạn rất mạnh mẽ. Hãy mang theo nó trong tâm trí vào ngày mai nhé. Nếu cảm thấy ngợp, hãy hít thở sâu 3 nhịp.",
-        "Tuyệt vời! Việc đặt mình vào góc nhìn của người khác chứng tỏ bạn có tư duy phản biện rất tốt. Hãy giữ vững tinh thần này!",
+        "Tôi thấy bạn đang nhận thức rất rõ cảm xúc của mình. Việc viết ra được như thế này đã là bước đầu tiên để làm chủ nỗi sợ.",
+        "Thần chú của bạn rất mạnh mẽ. Hãy mang theo nó trong tâm trí vào ngày mai nhé. Hít thở sâu nào.",
+        "Tuyệt vời! Việc đặt mình vào góc nhìn của người khác chứng tỏ bạn có tư duy phản biện rất tốt.",
         "Hành động nhỏ ngày mai của bạn rất khả thi. Đừng cố gắng hoàn hảo, chỉ cần tốt hơn hôm qua 1% là đủ rồi."
     ];
-    
     const randomAdvice = adviceList[Math.floor(Math.random() * adviceList.length)];
-
     const newEntry = {
         id: Date.now(),
         username: req.user.username,
@@ -98,7 +100,6 @@ app.post('/api/journals', authMiddleware, (req, res) => {
 });
 
 app.get('/api/challenge', authMiddleware, (req, res) => {
-    // Sửa lỗi ở đây: Nếu server mất dữ liệu do restart, tự động tạo lại mảng 21 ngày cho user hợp lệ
     if (!challenges[req.user.username]) {
         challenges[req.user.username] = Array(21).fill(null).map((_, i) => ({ day: i + 1, completed: false, anxietyLevel: 0, note: '' }));
     }
@@ -108,18 +109,64 @@ app.get('/api/challenge', authMiddleware, (req, res) => {
 app.post('/api/challenge/checkin', authMiddleware, (req, res) => {
     const { day, anxietyLevel, note } = req.body;
     let userColl = challenges[req.user.username];
-    
-    // Tự động khôi phục nếu mất mảng
     if (!userColl) {
         challenges[req.user.username] = Array(21).fill(null).map((_, i) => ({ day: i + 1, completed: false, anxietyLevel: 0, note: '' }));
         userColl = challenges[req.user.username];
     }
-    
     const dayIndex = userColl.findIndex(d => d.day === parseInt(day));
     if (dayIndex !== -1) {
         userColl[dayIndex] = { day: parseInt(day), completed: true, anxietyLevel: parseInt(anxietyLevel), note };
     }
     res.json(userColl);
+});
+
+// ==================== TRỢ LÝ GIỌNG NÓI AI (VOICE ASSISTANT) ====================
+app.post('/api/voice-assistant', authMiddleware, upload.single('audio'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'Không nhận được âm thanh.' });
+
+        // 1. OpenAI Whisper (STT) - Nghe người dùng nói
+        const sttForm = new FormData();
+        sttForm.append('file', req.file.buffer, { filename: 'voice.webm', contentType: req.file.mimetype });
+        sttForm.append('model', 'whisper-1');
+
+        const sttResponse = await axios.post('https://api.openai.com/v1/audio/transcriptions', sttForm, {
+            headers: { ...sttForm.getHeaders(), 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` }
+        });
+        const userText = sttResponse.data.text;
+
+        // 2. DeepSeek API (LLM) - Tạo câu trả lời an ủi tâm lý
+        const llmResponse = await axios.post('https://api.deepseek.com/v1/chat/completions', {
+            model: 'deepseek-chat',
+            messages: [
+                { 
+                    role: 'system', 
+                    content: 'Bạn là chuyên gia tâm lý tư vấn về chứng lo âu xã hội (hiệu ứng ánh đèn sân khấu). Hãy trả lời thật ngắn gọn (dưới 40 chữ), ấm áp, như một người bạn thân đang động viên. Không dùng ký tự đặc biệt hay gạch đầu dòng.' 
+                },
+                { role: 'user', content: userText }
+            ]
+        }, {
+            headers: { 'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`, 'Content-Type': 'application/json' }
+        });
+        const aiResponseText = llmResponse.data.choices[0].message.content;
+
+        // 3. OpenAI TTS - Đọc câu trả lời
+        const ttsResponse = await axios.post('https://api.openai.com/v1/audio/speech', {
+            model: 'tts-1',
+            voice: 'nova', // Giọng nữ ấm áp
+            input: aiResponseText
+        }, {
+            headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+            responseType: 'arraybuffer' 
+        });
+
+        res.set('Content-Type', 'audio/mpeg');
+        res.send(ttsResponse.data);
+
+    } catch (error) {
+        console.error('Lỗi AI Pipeline:', error.response?.data || error.message);
+        res.status(500).json({ error: 'Hệ thống AI đang quá tải.' });
+    }
 });
 
 // ==================== FRONTEND UI INTEGRATION ====================
@@ -141,12 +188,20 @@ app.get('*', (req, res) => {
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
         .modal-enter { animation: modalFadeIn 0.3s ease-out forwards; }
         @keyframes modalFadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        /* Animation cho nút ghi âm AI */
+        @keyframes pulse-ring { 
+            0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); } 
+            70% { box-shadow: 0 0 0 20px rgba(99, 102, 241, 0); } 
+            100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); } 
+        }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
+        // [CÁC COMPONENT CŨ ĐƯỢC GIỮ NGUYÊN: LoadingScreen, AuthPage, AdviceModal, DiarySection, SpotlightSimulator, Challenge21Days, HotlineSection]
+        
         const LoadingScreen = ({ message = "Hệ thống đang đồng bộ dữ liệu..." }) => (
             <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900 bg-opacity-75 backdrop-blur-md">
                 <div className="relative flex items-center justify-center">
@@ -226,12 +281,8 @@ app.get('*', (req, res) => {
                             </div>
                             <h3 className="text-xl font-extrabold text-slate-800">Thông Điệp Chữa Lành</h3>
                         </div>
-                        <p className="text-slate-600 text-center text-lg leading-relaxed mb-8 italic">
-                            "{advice}"
-                        </p>
-                        <button onClick={onClose} className="w-full py-3.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all">
-                            Mình Đã Hiểu ❤️
-                        </button>
+                        <p className="text-slate-600 text-center text-lg leading-relaxed mb-8 italic">"{advice}"</p>
+                        <button onClick={onClose} className="w-full py-3.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all">Mình Đã Hiểu ❤️</button>
                     </div>
                 </div>
             );
@@ -241,12 +292,9 @@ app.get('*', (req, res) => {
             const [entries, setEntries] = React.useState([]);
             const [showForm, setShowForm] = React.useState(false);
             const [newAdvice, setNewAdvice] = React.useState(null);
-            
             const [formData, setFormData] = React.useState({
-                situation: '', judgment: '', spotlightScale: 50, 
-                evidence: '', roleReversal: '', friendPerspective: '',
-                thoughts: { busy: false, unnotice: false, anxiousToo: false, other: '' },
-                mantra: '', nextAction: ''
+                situation: '', judgment: '', spotlightScale: 50, evidence: '', roleReversal: '', friendPerspective: '',
+                thoughts: { busy: false, unnotice: false, anxiousToo: false, other: '' }, mantra: '', nextAction: ''
             });
 
             const fetchDiaries = async () => {
@@ -255,10 +303,6 @@ app.get('*', (req, res) => {
             };
 
             React.useEffect(() => { fetchDiaries(); }, []);
-
-            const handleCheckboxChange = (field) => {
-                setFormData({...formData, thoughts: {...formData.thoughts, [field]: !formData.thoughts[field]}});
-            };
 
             const handleSubmit = async (e) => {
                 e.preventDefault();
@@ -270,9 +314,8 @@ app.get('*', (req, res) => {
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    setNewAdvice(data.expertAdvice); // Hiển thị modal tư vấn
+                    setNewAdvice(data.expertAdvice);
                 }
-                
                 setFormData({ situation: '', judgment: '', spotlightScale: 50, evidence: '', roleReversal: '', friendPerspective: '', thoughts: { busy: false, unnotice: false, anxiousToo: false, other: '' }, mantra: '', nextAction: '' });
                 setShowForm(false);
                 await fetchDiaries();
@@ -282,7 +325,6 @@ app.get('*', (req, res) => {
             return (
                 <div className="space-y-8 relative">
                     <AdviceModal advice={newAdvice} onClose={() => setNewAdvice(null)} />
-                    
                     <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                         <div>
                             <h2 className="text-2xl font-extrabold text-slate-800">Nhật Ký Phản Tư</h2>
@@ -297,18 +339,15 @@ app.get('*', (req, res) => {
                         <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl shadow-lg border border-indigo-100 space-y-8 relative overflow-hidden">
                             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
                             
-                            {/* Phân 1 */}
                             <div className="space-y-4">
-                                <h3 className="text-lg font-bold text-indigo-700 flex items-center gap-2">
-                                    <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md text-sm">Phần 1</span> Nhìn nhận lại vấn đề
-                                </h3>
+                                <h3 className="text-lg font-bold text-indigo-700 flex items-center gap-2"><span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md text-sm">Phần 1</span> Nhìn nhận lại vấn đề</h3>
                                 <div>
                                     <label className="block text-sm font-semibold text-slate-700 mb-1">Sự kiện / Tình huống khiến bạn lo lắng là gì?</label>
-                                    <textarea required rows="2" className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.situation} onChange={e => setFormData({...formData, situation: e.target.value})} placeholder="Ví dụ: Lỡ phát biểu vấp trong cuộc họp..."></textarea>
+                                    <textarea required rows="2" className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.situation} onChange={e => setFormData({...formData, situation: e.target.value})} placeholder="Ví dụ: Lỡ phát biểu vấp..."></textarea>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-semibold text-slate-700 mb-1">Mọi người đang phán xét bạn thế nào?</label>
-                                    <textarea required rows="2" className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.judgment} onChange={e => setFormData({...formData, judgment: e.target.value})} placeholder="Tôi sợ họ nghĩ tôi kém cỏi..."></textarea>
+                                    <textarea required rows="2" className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.judgment} onChange={e => setFormData({...formData, judgment: e.target.value})} placeholder="Tôi sợ họ nghĩ tôi kém..."></textarea>
                                 </div>
                                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                                     <label className="block text-sm font-semibold text-slate-700 mb-2">Bạn cảm thấy mức độ chú ý của họ là bao nhiêu %? <span className="text-rose-600 font-black text-lg">{formData.spotlightScale}%</span></label>
@@ -316,41 +355,30 @@ app.get('*', (req, res) => {
                                 </div>
                             </div>
 
-                            {/* Phần 2 */}
                             <div className="space-y-4 pt-6 border-t border-slate-100">
-                                <h3 className="text-lg font-bold text-emerald-600 flex items-center gap-2">
-                                    <span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-md text-sm">Phần 2</span> Kiểm chứng thực tế
-                                </h3>
+                                <h3 className="text-lg font-bold text-emerald-600 flex items-center gap-2"><span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-md text-sm">Phần 2</span> Kiểm chứng thực tế</h3>
                                 <div>
                                     <label className="block text-sm font-semibold text-slate-700 mb-1">Có bằng chứng nào cho thấy mọi người THỰC SỰ để ý đến bạn không?</label>
-                                    <input type="text" className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none" value={formData.evidence} onChange={e => setFormData({...formData, evidence: e.target.value})} placeholder="Hình như không ai cười hay nói gì cả..." />
+                                    <input type="text" className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none" value={formData.evidence} onChange={e => setFormData({...formData, evidence: e.target.value})} placeholder="Hình như không ai cười..." />
                                 </div>
                             </div>
 
-                            {/* Phần 3 */}
                             <div className="space-y-4 pt-6 border-t border-slate-100">
-                                <h3 className="text-lg font-bold text-amber-600 flex items-center gap-2">
-                                    <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded-md text-sm">Phần 3</span> Góc nhìn mới
-                                </h3>
+                                <h3 className="text-lg font-bold text-amber-600 flex items-center gap-2"><span className="bg-amber-100 text-amber-700 px-2 py-1 rounded-md text-sm">Phần 3</span> Góc nhìn mới</h3>
                                 <div className="mt-4 bg-amber-50 p-5 rounded-xl border border-amber-200">
-                                    <label className="block text-sm font-bold text-amber-800 mb-2">✨ Viết ra một câu "thần chú" để nhắc nhở bản thân khi lo lắng:</label>
-                                    <input type="text" required className="w-full p-3 bg-white border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-400 outline-none font-medium text-amber-900" value={formData.mantra} onChange={e => setFormData({...formData, mantra: e.target.value})} placeholder="Ví dụ: Không ai soi xét mình kỹ như mình nghĩ đâu!" />
+                                    <label className="block text-sm font-bold text-amber-800 mb-2">✨ Viết ra một câu "thần chú" để nhắc nhở bản thân:</label>
+                                    <input type="text" required className="w-full p-3 bg-white border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-400 outline-none font-medium text-amber-900" value={formData.mantra} onChange={e => setFormData({...formData, mantra: e.target.value})} placeholder="Ví dụ: Không ai soi xét mình kỹ như mình nghĩ!" />
                                 </div>
                             </div>
 
-                            {/* Phần 4 */}
                             <div className="space-y-4 pt-6 border-t border-slate-100">
-                                <h3 className="text-lg font-bold text-sky-600 flex items-center gap-2">
-                                    <span className="bg-sky-100 text-sky-700 px-2 py-1 rounded-md text-sm">Phần 4</span> Hành động nhỏ cho ngày mai
-                                </h3>
+                                <h3 className="text-lg font-bold text-sky-600 flex items-center gap-2"><span className="bg-sky-100 text-sky-700 px-2 py-1 rounded-md text-sm">Phần 4</span> Hành động nhỏ cho ngày mai</h3>
                                 <div>
-                                    <textarea required rows="2" className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none" value={formData.nextAction} onChange={e => setFormData({...formData, nextAction: e.target.value})} placeholder="Ví dụ: Tôi sẽ mặc chiếc áo màu nổi bật mà tôi thích ra đường..."></textarea>
+                                    <textarea required rows="2" className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none" value={formData.nextAction} onChange={e => setFormData({...formData, nextAction: e.target.value})} placeholder="Ví dụ: Tự tin mỉm cười..."></textarea>
                                 </div>
                             </div>
 
-                            <button type="submit" className="w-full py-4 bg-slate-900 text-white font-bold text-lg rounded-xl hover:bg-slate-800 shadow-xl transition-all">
-                                🔒 Ghi Lại & Nhận Lời Khuyên
-                            </button>
+                            <button type="submit" className="w-full py-4 bg-slate-900 text-white font-bold text-lg rounded-xl hover:bg-slate-800 shadow-xl transition-all">🔒 Ghi Lại & Nhận Lời Khuyên</button>
                         </form>
                     )}
 
@@ -478,7 +506,7 @@ app.get('*', (req, res) => {
                     </div>
 
                     {daysData.length === 0 ? (
-                        <div className="text-center p-10 bg-slate-50 rounded-xl">Đang khôi phục dữ liệu, vui lòng đợi...</div>
+                        <div className="text-center p-10 bg-slate-50 rounded-xl">Đang khôi phục dữ liệu...</div>
                     ) : (
                         <div className="grid grid-cols-3 sm:grid-cols-7 gap-3">
                             {daysData.map(d => (
@@ -497,12 +525,12 @@ app.get('*', (req, res) => {
                         <form onSubmit={handleCheckIn} className="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
                             <h3 className="font-extrabold text-indigo-900 text-lg border-b border-slate-200 pb-2">🎯 Hoàn thành Ngày {selectedDay}</h3>
                             <div>
-                                <label className="block text-sm font-bold text-slate-600 mb-2">Độ run rẩy hôm nay (1-Chill, 10-Hoảng): <span className="text-indigo-600 text-lg">{anxiety}</span></label>
+                                <label className="block text-sm font-bold text-slate-600 mb-2">Độ run rẩy hôm nay (1-10): <span className="text-indigo-600 text-lg">{anxiety}</span></label>
                                 <input type="range" min="1" max="10" className="w-full accent-indigo-600" value={anxiety} onChange={e => setAnxiety(e.target.value)} />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-slate-600 mb-2">Bạn đã làm gì để vượt qua nó?</label>
-                                <input type="text" required placeholder="Ví dụ: Chủ động bắt chuyện với đồng nghiệp..." className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none" value={note} onChange={e => setNote(e.target.value)} />
+                                <input type="text" required placeholder="Ví dụ: Bắt chuyện với đồng nghiệp..." className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none" value={note} onChange={e => setNote(e.target.value)} />
                             </div>
                             <div className="flex gap-3 justify-end pt-2">
                                 <button type="button" onClick={() => setSelectedDay(null)} className="px-5 py-2.5 text-sm text-slate-500 font-bold hover:bg-slate-200 rounded-xl transition">Hủy</button>
@@ -520,7 +548,6 @@ app.get('*', (req, res) => {
                     <h2 className="text-2xl font-extrabold text-slate-800">Liên Hệ Chuyên Gia 🩺</h2>
                     <p className="text-slate-500 text-sm mt-2">Nếu cảm thấy quá áp lực, đừng ngần ngại tìm kiếm sự giúp đỡ từ những người có chuyên môn.</p>
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="p-6 bg-rose-50 rounded-2xl border border-rose-100">
                         <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-rose-500 text-xl shadow-sm mb-4">🚨</div>
@@ -528,21 +555,114 @@ app.get('*', (req, res) => {
                         <p className="text-sm text-slate-600 mb-4">Hỗ trợ khẩn cấp 24/7 về sức khỏe tinh thần và tâm lý.</p>
                         <a href="tel:111" className="inline-block px-5 py-2.5 bg-rose-500 text-white font-bold rounded-lg shadow-md hover:bg-rose-600 transition">📞 Gọi 111 (Miễn phí)</a>
                     </div>
-                    
                     <div className="p-6 bg-indigo-50 rounded-2xl border border-indigo-100">
                         <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-indigo-500 text-xl shadow-sm mb-4">💬</div>
                         <h3 className="font-bold text-slate-800 mb-1">MindCare Vietnam</h3>
-                        <p className="text-sm text-slate-600 mb-4">Phòng tham vấn tâm lý, chuyên tư vấn vượt qua lo âu xã hội.</p>
+                        <p className="text-sm text-slate-600 mb-4">Phòng tham vấn tâm lý chuyên môn.</p>
                         <a href="tel:19001234" className="inline-block px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 transition">📞 Gọi 1900 1234</a>
                     </div>
                 </div>
-
-                <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl text-center mt-6">
-                    <h4 className="font-bold text-slate-700 mb-2">Lời Khuyên Của Hệ Thống:</h4>
-                    <p className="text-sm text-slate-600 italic">"Ghi nhật ký là phương pháp tự trị liệu rất tốt, nhưng nếu các triệu chứng lo âu kéo dài trên 6 tháng và ảnh hưởng nghiêm trọng đến sinh hoạt, việc gặp chuyên gia tâm lý trực tiếp là bước đi quan trọng và dũng cảm nhất."</p>
-                </div>
             </div>
         );
+
+        // ================= COMPONENT MỚI: VOICE ASSISTANT WIDGET =================
+        const VoiceAssistantWidget = () => {
+            const [isRecording, setIsRecording] = React.useState(false);
+            const [isLoading, setIsLoading] = React.useState(false);
+            const mediaRecorderRef = React.useRef(null);
+            const audioChunksRef = React.useRef([]);
+            const audioPlayerRef = React.useRef(null); // Để quản lý file đang phát
+
+            const startRecording = async (e) => {
+                e.preventDefault();
+                if (isLoading) return;
+                
+                // Dừng audio cũ nếu đang phát
+                if (audioPlayerRef.current) {
+                    audioPlayerRef.current.pause();
+                    audioPlayerRef.current = null;
+                }
+
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorderRef.current = mediaRecorder;
+                    audioChunksRef.current = [];
+
+                    mediaRecorder.ondataavailable = (e) => {
+                        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+                    };
+
+                    mediaRecorder.onstop = async () => {
+                        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                        await sendToAI(audioBlob);
+                    };
+
+                    mediaRecorder.start();
+                    setIsRecording(true);
+                } catch (err) {
+                    alert('Vui lòng cấp quyền Micro trên trình duyệt để gọi AI!');
+                }
+            };
+
+            const stopRecording = (e) => {
+                e.preventDefault();
+                if (isRecording && mediaRecorderRef.current) {
+                    mediaRecorderRef.current.stop();
+                    mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop()); // Tắt mic thu
+                    setIsRecording(false);
+                }
+            };
+
+            const sendToAI = async (audioBlob) => {
+                setIsLoading(true);
+                const formData = new FormData();
+                formData.append('audio', audioBlob, 'voice.webm');
+
+                try {
+                    const res = await fetch('/api/voice-assistant', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!res.ok) throw new Error('Máy chủ AI đang quá tải.');
+
+                    const audioBlobResponse = await res.blob();
+                    const audioUrl = URL.createObjectURL(audioBlobResponse);
+                    const audio = new Audio(audioUrl);
+                    audioPlayerRef.current = audio;
+                    
+                    audio.play();
+                } catch (error) {
+                    alert('Lỗi AI: ' + error.message);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            return (
+                <div className="fixed bottom-8 right-8 z-50 flex flex-col items-center">
+                    <div className={"mb-3 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-lg transition-all " + (isRecording ? "bg-rose-500" : isLoading ? "bg-indigo-500" : "bg-slate-800 opacity-0")}>
+                        {isRecording ? "Đang nghe... (Nhả ra để gửi)" : isLoading ? "AI đang suy nghĩ..." : ""}
+                    </div>
+                    
+                    <button 
+                        onMouseDown={startRecording}
+                        onMouseUp={stopRecording}
+                        onMouseLeave={stopRecording}
+                        onTouchStart={startRecording}
+                        onTouchEnd={stopRecording}
+                        disabled={isLoading}
+                        className={"w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-2xl transition-all select-none outline-none " + 
+                            (isRecording ? "bg-rose-500 text-white scale-95 shadow-[0_0_0_10px_rgba(244,63,94,0.3)]" : 
+                             isLoading ? "bg-slate-300 text-slate-500 cursor-not-allowed" : 
+                             "bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:scale-110 hover:shadow-indigo-500/50")}
+                    >
+                        {isLoading ? "⏳" : "🎙️"}
+                    </button>
+                </div>
+            );
+        };
 
         const App = () => {
             const [user, setUser] = React.useState(null);
@@ -567,8 +687,7 @@ app.get('*', (req, res) => {
             if (!user) return <AuthPage onAuthSuccess={setUser} setIsGlobalLoading={setIsGlobalLoading} />;
 
             return (
-                <div className="min-h-screen flex flex-col md:flex-row bg-[#f4f7fb]">
-                    {/* SIDEBAR */}
+                <div className="min-h-screen flex flex-col md:flex-row bg-[#f4f7fb] relative">
                     <div className="w-full md:w-72 bg-white border-r border-slate-200 p-6 flex flex-col justify-between shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-10">
                         <div className="space-y-8">
                             <div className="text-center md:text-left mt-4">
@@ -607,7 +726,6 @@ app.get('*', (req, res) => {
                         </div>
                     </div>
 
-                    {/* MAIN CONTENT */}
                     <div className="flex-1 p-4 md:p-10 max-w-5xl mx-auto w-full h-screen overflow-y-auto custom-scrollbar">
                         <div className="pb-10">
                             {activeTab === 'diary' && <DiarySection setIsGlobalLoading={setIsGlobalLoading} />}
@@ -616,6 +734,9 @@ app.get('*', (req, res) => {
                             {activeTab === 'hotline' && <HotlineSection />}
                         </div>
                     </div>
+
+                    {/* HIỂN THỊ WIDGET AI Ở GÓC MÀN HÌNH */}
+                    <VoiceAssistantWidget />
                 </div>
             );
         };
