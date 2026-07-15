@@ -1,43 +1,37 @@
-// DÒNG NÀY PHẢI NẰM Ở TRÊN CÙNG (Dòng 1 hoặc 2)
-require('dotenv').config();
-
+require('dotenv').config(); // LUÔN NẰM DÒNG ĐẦU TIÊN
 const express = require('express');
-const { OpenAI } = require('openai'); // Vẫn dùng thư viện này vì nó hỗ trợ DeepSeek
+const { OpenAI } = require('openai');
+const cors = require('cors'); // Nên thêm cái này để tránh lỗi chặn kết nối
+
 const app = express();
-
-// Khởi tạo client DeepSeek
-// Lưu ý: baseURL là thứ giúp OpenAI SDK kết nối với server DeepSeek thay vì OpenAI
-const client = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY, 
-  baseURL: 'https://api.deepseek.com',
-});
-
-// Các phần còn lại của code (middleware, routes...)
+app.use(cors());
 app.use(express.json());
 
-// Ví dụ route xử lý AI
-app.post('/ask', async (req, res) => {
-  try {
-    const { message } = req.body;
-    
-    const completion = await client.chat.completions.create({
-      messages: [{ role: "user", content: message }],
-      model: "deepseek-chat", // DeepSeek dùng model này
-    });
-
-    res.json({ reply: completion.choices[0].message.content });
-  } catch (error) {
-    console.error("Lỗi rồi bro:", error);
-    res.status(500).send("Có lỗi xảy ra");
-  }
+// Khởi tạo DeepSeek
+const client = new OpenAI({
+    apiKey: process.env.DEEPSEEK_API_KEY,
+    baseURL: 'https://api.deepseek.com',
 });
 
-// ... phần còn lại của app
-const PORT = process.env.PORT || 3000;
-const JWT_SECRET = 'senior-architect-15-years-experience-secret-key';
+// Route API của bro
+app.post('/api/chat', async (req, res) => {
+    try {
+        const { message } = req.body;
+        const completion = await client.chat.completions.create({
+            messages: [{ role: "user", content: message }],
+            model: "deepseek-chat",
+        });
+        res.json({ reply: completion.choices[0].message.content });
+    } catch (error) {
+        console.error("Lỗi server:", error);
+        res.status(500).json({ error: "Có lỗi xảy ra" });
+    }
+});
 
-// Cấu hình Multer lưu file ghi âm trên RAM
-const upload = multer({ storage: multer.memoryStorage() });
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server đang chạy trên cổng ${PORT}`);
+});
 
 app.use(express.json());
 app.use(cookieParser());
