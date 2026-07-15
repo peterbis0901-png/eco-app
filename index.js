@@ -1,12 +1,38 @@
+// DÒNG NÀY PHẢI NẰM Ở TRÊN CÙNG (Dòng 1 hoặc 2)
 require('dotenv').config();
-const express = require('express');
-const cookieParser = require('cookie-parser');
-const jwt = require('jsonwebtoken');
-const path = require('path');
-const multer = require('multer');
-const axios = require('axios');
-const FormData = require('form-data');
 
+const express = require('express');
+const { OpenAI } = require('openai'); // Vẫn dùng thư viện này vì nó hỗ trợ DeepSeek
+const app = express();
+
+// Khởi tạo client DeepSeek
+// Lưu ý: baseURL là thứ giúp OpenAI SDK kết nối với server DeepSeek thay vì OpenAI
+const client = new OpenAI({
+  apiKey: process.env.DEEPSEEK_API_KEY, 
+  baseURL: 'https://api.deepseek.com',
+});
+
+// Các phần còn lại của code (middleware, routes...)
+app.use(express.json());
+
+// Ví dụ route xử lý AI
+app.post('/ask', async (req, res) => {
+  try {
+    const { message } = req.body;
+    
+    const completion = await client.chat.completions.create({
+      messages: [{ role: "user", content: message }],
+      model: "deepseek-chat", // DeepSeek dùng model này
+    });
+
+    res.json({ reply: completion.choices[0].message.content });
+  } catch (error) {
+    console.error("Lỗi rồi bro:", error);
+    res.status(500).send("Có lỗi xảy ra");
+  }
+});
+
+// ... phần còn lại của app
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = 'senior-architect-15-years-experience-secret-key';
