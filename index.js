@@ -33,7 +33,6 @@ app.post('/ask', async (req, res) => {
 });
 
 // ... phần còn lại của app
-const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = 'senior-architect-15-years-experience-secret-key';
 
