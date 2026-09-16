@@ -332,7 +332,7 @@ app.get('/', (req, res) => {
             <div id="wallPostsContainer"></div>
         </div>
 
-        <!-- TAB MỚI (Từ Mindful App): TIẾN TRÌNH -->
+        <!-- TAB: TIẾN TRÌNH -->
         <div id="progress" class="tab-content">
             <h2 style="color:var(--primary-dark); margin-bottom:15px;">Tiến trình của bạn</h2>
             <div class="mindful-card">
@@ -354,7 +354,7 @@ app.get('/', (req, res) => {
             </div>
         </div>
 
-        <!-- TAB MỚI (Từ Mindful App): TẬP THỞ -->
+        <!-- TAB: TẬP THỞ (ĐÃ TÍCH HỢP MP3) -->
         <div id="breathe" class="tab-content">
             <h2 style="color:var(--primary-dark); margin-bottom:15px;">Tập thở Box Breathing</h2>
             <div class="mindful-card">
@@ -369,13 +369,13 @@ app.get('/', (req, res) => {
                 <button class="btn-mindful" id="btn-breathe" onclick="toggleBreathe()">Bắt đầu tập</button>
                 
                 <div style="margin-top: 20px; width: 100%; text-align: center;">
-                    <p style="font-size: 14px; margin-bottom: 10px; color: var(--text-light);">* Nhạc thiền tĩnh tâm</p>
-                    <iframe width="100%" height="80" src="https://www.youtube.com/embed/fuXfT4Rv_WM" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    <p style="font-size: 14px; margin-bottom: 10px; color: var(--text-muted);">🎵 Nhạc thiền tĩnh tâm hít thở</p>
+                    <audio id="breatheAudio" src="nhac-hit-tho.mp3" loop preload="auto" controls style="width: 100%; border-radius: 8px;"></audio>
                 </div>
             </div>
         </div>
 
-        <!-- TAB MỚI (Từ Mindful App): THỬ THÁCH 21 NGÀY -->
+        <!-- TAB: THỬ THÁCH 21 NGÀY -->
         <div id="challenge21" class="tab-content">
             <h2 style="color:var(--primary-dark); margin-bottom:15px;">Mindful 21 Ngày</h2>
             <div class="mindful-card">
@@ -426,7 +426,7 @@ app.get('/', (req, res) => {
             }, 1200);
             
             checkUser();
-            initMindfulChallengeData(); // Khởi tạo dữ liệu từ app gộp
+            initMindfulChallengeData();
         });
 
         function checkUser() {
@@ -455,7 +455,6 @@ app.get('/', (req, res) => {
             document.getElementById("streakCount").innerText = streak;
         }
 
-        // HỢP NHẤT HÀM SWITCH TAB
         function switchTab(evt, tabId) {
             document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
             document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
@@ -470,7 +469,7 @@ app.get('/', (req, res) => {
         }
 
         // ==========================================
-        // LOGIC SPOTLIGHT (Từ Code Cũ)
+        // LOGIC SPOTLIGHT
         // ==========================================
         async function predictAttention() {
             const event = document.getElementById("eventInput").value.trim();
@@ -574,10 +573,8 @@ app.get('/', (req, res) => {
         }
 
         // ==========================================
-        // LOGIC MINDFUL APP (Từ file HTML Gộp)
+        // LOGIC MINDFUL APP & TẬP THỞ (TỰ ĐỘNG PHÁT MP3)
         // ==========================================
-        
-        // -- Logic Tập Thở --
         let timerInterval, isBreathing = false;
         let breatheMinutes = parseInt(localStorage.getItem('breatheMinutes')) || 0;
         document.getElementById('stat-breathe').innerText = breatheMinutes;
@@ -591,15 +588,24 @@ app.get('/', (req, res) => {
 
         function toggleBreathe() {
             const btn = document.getElementById('btn-breathe');
+            const audio = document.getElementById('breatheAudio');
+
             if (isBreathing) {
                 stopBreathe();
                 btn.innerText = 'Bắt đầu tập';
+                if (audio) {
+                    audio.pause();
+                    audio.currentTime = 0;
+                }
                 breatheMinutes++;
                 localStorage.setItem('breatheMinutes', breatheMinutes);
                 document.getElementById('stat-breathe').innerText = breatheMinutes;
             } else {
                 startBreathe();
                 btn.innerText = 'Dừng tập (Để lưu phút)';
+                if (audio) {
+                    audio.play().catch(e => console.log('Không thể tự động phát nhạc:', e));
+                }
             }
             isBreathing = !isBreathing;
         }
@@ -613,7 +619,7 @@ app.get('/', (req, res) => {
 
             function updatePhase() {
                 textEl.innerText = breathePhases[pIndex].text;
-                outerCircle.style.transform = \`scale(\${breathePhases[pIndex].scale})\`;
+                outerCircle.style.transform = 'scale(' + breathePhases[pIndex].scale + ')';
                 timeLeft = breathePhases[pIndex].time;
                 timerEl.innerText = timeLeft;
             }
@@ -621,91 +627,119 @@ app.get('/', (req, res) => {
 
             timerInterval = setInterval(() => {
                 timeLeft--;
-                if (timeLeft > 0) timerEl.innerText = timeLeft;
-                else {
+                if (timeLeft <= 0) {
                     pIndex = (pIndex + 1) % breathePhases.length;
                     updatePhase();
+                } else {
+                    timerEl.innerText = timeLeft;
                 }
             }, 1000);
         }
 
         function stopBreathe() {
             clearInterval(timerInterval);
-            document.getElementById('circle-outer').style.transform = 'scale(1)';
-            document.getElementById('breathe-text').innerText = 'Chuẩn bị';
-            document.getElementById('breathe-timer').innerText = '4';
+            const outerCircle = document.getElementById('circle-outer');
+            const textEl = document.getElementById('breathe-text');
+            const timerEl = document.getElementById('breathe-timer');
+            outerCircle.style.transform = 'scale(1)';
+            textEl.innerText = 'Chuẩn bị';
+            timerEl.innerText = '4';
         }
 
-        // -- Logic 21 Ngày Thử Thách --
-        const mindfulTasks = [
-            "Dành 15 phút đọc sách hoặc nghe podcast tích cực.",
-            "Đi dạo 20 phút mà không mang theo điện thoại.",
-            "Uống đủ 2 lít nước và ăn nhiều rau xanh hôm nay.",
-            "Viết ra 3 điều bạn cảm thấy biết ơn lúc này.",
-            "Dọn dẹp lại góc làm việc/phòng ngủ cho gọn gàng.",
-            "Nhắn tin hỏi thăm một người bạn/người thân đã lâu không gặp.",
-            "Thực hiện bài tập thở Box Breathing 5 lần."
+        // ==========================================
+        // LOGIC THỬ THÁCH 21 NGÀY
+        // ==========================================
+        const dailyTasks = [
+            "Dành 5 phút hít thở sâu và cảm nhận cơ thể.",
+            "Viết ra 3 điều bạn cảm thấy biết ơn trong ngày.",
+            "Uống đủ 2 lít nước và ăn một bữa ăn lành mạnh.",
+            "Đi dạo 15 phút không dùng điện thoại.",
+            "Khen ngợi một ai đó một cách chân thành.",
+            "Dọn dẹp lại góc làm việc / phòng ngủ.",
+            "Đọc 10 trang sách hoặc nghe một bài podcast hay.",
+            "Hạn chế sử dụng mạng xã hội trong 2 giờ trước khi ngủ.",
+            "Lắng nghe một bản nhạc thư giãn và không làm gì cả.",
+            "Thử làm một điều mới mẻ mà bạn chưa từng làm.",
+            "Nhắn tin hỏi thăm một người bạn cũ.",
+            "Mỉm cười với chính mình trong gương và tự động viên.",
+            "Thả lỏng vai và nhắm mắt nghỉ ngơi 5 phút giữa giờ.",
+            "Bỏ qua một chuyện nhỏ khiến bạn bực mình.",
+            "Viết ra những cảm xúc tiêu cực rồi xé bỏ tờ giấy.",
+            "Dành thời gian chăm sóc cây cối hoặc ngắm thiên nhiên.",
+            "Thực hiện bài tập giãn cơ 10 phút.",
+            "Học cách từ chối một việc không cần thiết.",
+            "Đi ngủ sớm hơn 30 phút so với thường lệ.",
+            "Nhìn lại hành trình 20 ngày qua và tự hào về bản thân.",
+            "Hoàn thành thử thách 21 ngày và ăn mừng!"
         ];
 
-        let mindfulAppData = JSON.parse(localStorage.getItem('mindfulAppData')) || {};
-        let currentEmoji = '';
-        
-        const mStartDate = localStorage.getItem('mStartDate') || new Date().toDateString();
-        if(!localStorage.getItem('mStartDate')) localStorage.setItem('mStartDate', mStartDate);
-        
-        const dayDiff = Math.floor((new Date() - new Date(mStartDate)) / (1000 * 60 * 60 * 24));
-        const currentMindfulDay = Math.min(dayDiff + 1, 21); 
-
-        function initMindfulChallengeData() {
-            document.getElementById('current-day-label').innerText = \`Ngày \${currentMindfulDay}\`;
-            const taskIndex = (new Date().getDate() + currentMindfulDay) % mindfulTasks.length;
-            document.getElementById('daily-task-mindful').innerText = mindfulTasks[taskIndex];
-            renderMindfulTracker();
-            updateMindfulProgress();
-        }
+        let selectedEmojiVal = '🙂';
 
         function selectEmoji(emoji) {
+            selectedEmojiVal = emoji;
             document.querySelectorAll('.emoji').forEach(el => el.classList.remove('selected'));
-            event.target.classList.add('selected');
-            currentEmoji = emoji;
+            if (event && event.target) event.target.classList.add('selected');
+        }
+
+        function initMindfulChallengeData() {
+            let currentDay = parseInt(localStorage.getItem('mindful_current_day')) || 1;
+            if (currentDay > 21) currentDay = 21;
+            
+            document.getElementById('current-day-label').innerText = 'Ngày ' + currentDay;
+            document.getElementById('daily-task-mindful').innerText = dailyTasks[currentDay - 1] || dailyTasks[0];
+            
+            renderTrackerBoard();
+            updateProgressUI();
         }
 
         function saveDailyProgress() {
-            const journal = document.getElementById('journal-entry').value;
-            if (!currentEmoji) return alert("Chọn 1 cảm xúc hôm nay nhé!");
+            let currentDay = parseInt(localStorage.getItem('mindful_current_day')) || 1;
+            let completedDays = JSON.parse(localStorage.getItem('mindful_completed_days')) || [];
 
-            mindfulAppData[\`day_\${currentMindfulDay}\`] = { emoji: currentEmoji, journal, completed: true };
-            localStorage.setItem('mindfulAppData', JSON.stringify(mindfulAppData));
+            if (!completedDays.includes(currentDay)) {
+                completedDays.push(currentDay);
+                localStorage.setItem('mindful_completed_days', JSON.stringify(completedDays));
+            }
 
-            const msgBox = document.getElementById('motivation-message');
-            msgBox.innerText = "Tuyệt vời! Mỗi bước đi nhỏ đều tạo nên hành trình lớn.";
-            msgBox.style.display = 'block';
+            if (currentDay < 21) {
+                localStorage.setItem('mindful_current_day', currentDay + 1);
+            }
 
             document.getElementById('journal-entry').value = '';
-            document.querySelectorAll('.emoji').forEach(el => el.classList.remove('selected'));
-            currentEmoji = '';
+            
+            const msgBox = document.getElementById('motivation-message');
+            msgBox.style.display = 'block';
+            msgBox.innerText = 'Chúc mừng bạn đã hoàn thành Ngày ' + currentDay + '! Hãy tiếp tục phát huy nhé! 🎉';
+            
+            setTimeout(() => {
+                msgBox.style.display = 'none';
+            }, 3000);
 
-            renderMindfulTracker();
-            updateMindfulProgress();
+            initMindfulChallengeData();
         }
 
-        function renderMindfulTracker() {
+        function renderTrackerBoard() {
             const board = document.getElementById('tracker-board');
+            let completedDays = JSON.parse(localStorage.getItem('mindful_completed_days')) || [];
             board.innerHTML = '';
+
             for (let i = 1; i <= 21; i++) {
-                const dayData = mindfulAppData[\`day_\${i}\`];
-                const isCompleted = dayData && dayData.completed;
-                board.innerHTML += \`<div class="tracker-day \${isCompleted ? 'completed' : ''}"><strong>N.\${i}</strong><span>\${isCompleted ? dayData.emoji : '⚪'}</span></div>\`;
+                const dayDiv = document.createElement('div');
+                const isDone = completedDays.includes(i);
+                dayDiv.className = 'tracker-day ' + (isDone ? 'completed' : '');
+                dayDiv.innerHTML = '<span>Ngày ' + i + '</span><span>' + (isDone ? '✅' : '⚪') + '</span>';
+                board.appendChild(dayDiv);
             }
         }
 
-        function updateMindfulProgress() {
-            const completedDays = Object.keys(mindfulAppData).filter(k => mindfulAppData[k].completed).length;
-            const percentage = Math.min((completedDays / 21) * 100, 100);
-            
-            document.getElementById('main-progress').style.width = percentage + '%';
-            document.getElementById('progress-text').innerText = \`\${completedDays}/21 ngày\`;
-            document.getElementById('stat-days').innerText = completedDays;
+        function updateProgressUI() {
+            let completedDays = JSON.parse(localStorage.getItem('mindful_completed_days')) || [];
+            let count = completedDays.length;
+            let percent = Math.round((count / 21) * 100);
+
+            document.getElementById('main-progress').style.width = percent + '%';
+            document.getElementById('progress-text').innerText = count + '/21 ngày';
+            document.getElementById('stat-days').innerText = count;
         }
     </script>
 </body>
@@ -714,9 +748,6 @@ app.get('/', (req, res) => {
     res.send(htmlContent);
 });
 
-// ==========================================
-// 4. SERVER INIT
-// ==========================================
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 System running on port ${PORT}`);
+app.listen(PORT, () => {
+    console.log(`Server đang chạy tại http://localhost:${PORT}`);
 });
