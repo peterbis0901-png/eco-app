@@ -29,9 +29,7 @@ const loadingAffirmations = [
     "Chào mừng bạn trở lại với không gian an toàn của chính mình..."
 ];
 
-// 2. BACKEND API ENDPOINTS (FULL LOGIC BẢN 13)
-
-// API Chatbot AI
+// 2. BACKEND API ENDPOINTS
 app.post('/api/chat', (req, res) => {
     try {
         const { message, userName } = req.body;
@@ -59,13 +57,11 @@ app.post('/api/chat', (req, res) => {
     }
 });
 
-// API Thử thách
 app.get('/api/challenge', (req, res) => {
     const random = dailyChallenges[Math.floor(Math.random() * dailyChallenges.length)];
     res.json({ success: true, challenge: random });
 });
 
-// API Bức tường đồng cảm (Bản 13)
 app.get('/api/wall', (req, res) => {
     res.json({ success: true, posts: anonymousWallPosts });
 });
@@ -87,7 +83,6 @@ app.post('/api/wall', (req, res) => {
     }
 });
 
-// API Kính lúp hiệu ứng Spotlight & Tái định khung
 app.post('/api/predict-spotlight', (req, res) => {
     try {
         const { event, perceivedPercent } = req.body;
@@ -114,7 +109,7 @@ app.post('/api/predict-spotlight', (req, res) => {
     }
 });
 
-// 3. FRONTEND SPA (UX/UI BẢN 14/15 + TÍNH NĂNG BẢN 13)
+// 3. FRONTEND SPA (HỢP NHẤT BẢN 17 & FEATURE MINDFUL APP)
 app.get('/', (req, res) => {
     const htmlContent = `
 <!DOCTYPE html>
@@ -122,13 +117,15 @@ app.get('/', (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spotlight Check - Sổ Tay Phản Tư</title>
+    <title>Spotlight Check & Mindful Space</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Nunito:wght@400;600;700;800&display=swap');
         
         :root {
             --primary: #5b21b6;
             --primary-light: #ede9fe;
+            --primary-green: #4CAF50;
+            --primary-green-dark: #388E3C;
             --accent: #10b981;
             --bg: #f9f8f6;
             --paper: #ffffff;
@@ -146,7 +143,7 @@ app.get('/', (req, res) => {
             background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h100v100H0z' fill='%23f9f8f6'/%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M0 0h100v100H0V0zm2 2h96v96H2V2z' fill='%23f1f0ee'/%3E%3C/svg%3E"); 
         }
         
-        /* Splash Loader UI 14/15 */
+        /* Splash Loader */
         #splashLoader { 
             position: fixed; top:0; left:0; width:100vw; height:100vh; 
             background: #faf9f6; display: flex; flex-direction: column; 
@@ -165,12 +162,12 @@ app.get('/', (req, res) => {
         .app-title { font-size: 1.6rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; justify-content: center; gap: 8px; letter-spacing: -0.5px; }
         .slogan { font-size: 0.95rem; color: var(--text-muted); margin-top: 6px; font-style: italic; font-family: 'Lora', serif; }
         
-        .container { max-width: 620px; margin: 1.5rem auto; padding: 0 1rem; }
+        .container { max-width: 680px; margin: 1.5rem auto; padding: 0 1rem; }
         
         .user-bar { background: #fff; padding: 1rem 1.2rem; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
         .streak-badge { background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; }
         
-        /* Cấu trúc Sổ tay UI 14/15 */
+        /* Cấu trúc Sổ tay */
         .notebook-card {
             background: var(--paper);
             border-radius: 8px;
@@ -189,7 +186,7 @@ app.get('/', (req, res) => {
         .notebook-input { width: 100%; background: transparent; border: none; font-size: 1rem; line-height: 32px; resize: none; outline: none; font-family: 'Lora', serif; color: #1f2937; padding: 0; min-height: 64px; overflow: hidden; }
         .notebook-input::placeholder { color: #9ca3af; font-style: italic; }
         
-        /* Navigation (Dấu trang UI 14/15) */
+        /* Navigation Tabs */
         .nav-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.5rem; justify-content: center; }
         .tab-btn { background: #fff; border: 1px solid #e5e7eb; padding: 0.65rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700; cursor: pointer; color: var(--text-muted); transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(91, 33, 182, 0.2); }
@@ -197,13 +194,15 @@ app.get('/', (req, res) => {
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Controls */
+        /* Controls & General Elements */
         .slider-container { background: #fff; padding: 1rem; border-radius: 12px; border: 1px dashed #cbd5e1; margin: 1rem 0; position: relative; z-index: 2; text-align: center; }
         .slider-val { font-size: 1.5rem; font-weight: 800; color: #ef4444; }
         input[type="range"] { width: 100%; accent-color: var(--primary); margin-top: 10px; }
         
         .btn { width: 100%; padding: 1rem; border: none; border-radius: 12px; background: var(--primary); color: #fff; font-weight: 700; cursor: pointer; transition: transform 0.2s; font-size: 1rem; position: relative; z-index: 2; }
         .btn:active { transform: scale(0.98); }
+        .btn-green { background: var(--primary-green); }
+        .btn-green:hover { background: var(--primary-green-dark); }
         
         .ai-result-box { display: none; margin-top: 1rem; background: var(--primary-light); border-left: 4px solid var(--primary); padding: 1.2rem; border-radius: 0 8px 8px 0; font-size: 0.95rem; color: #4c1d95; line-height: 1.6; position: relative; z-index: 2; font-family: 'Lora', serif; }
         .reframe-item { background: #fff; padding: 0.6rem 0.8rem; border-radius: 6px; margin-top: 6px; font-size: 0.9rem; color: #374151; }
@@ -221,7 +220,7 @@ app.get('/', (req, res) => {
         .chat-input-area input { flex: 1; border: 1px solid #e5e7eb; border-radius: 20px; padding: 0 1.2rem; font-size: 0.95rem; outline: none; }
         .chat-input-area button { width: auto; padding: 0.8rem 1.5rem; border-radius: 20px; }
 
-        /* Bức tường đồng cảm (Bản 13 UI) */
+        /* Wall Post UI */
         .wall-post-card { background: #fff; border-radius: 12px; padding: 1.2rem; margin-bottom: 1rem; border: 1px solid #e5e7eb; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
         .wall-author { font-size: 0.85rem; font-weight: 700; color: var(--primary); display: flex; justify-content: space-between; }
         .wall-text { font-size: 0.95rem; margin-top: 6px; font-family: 'Lora', serif; color: var(--text); line-height: 1.5; }
@@ -231,10 +230,36 @@ app.get('/', (req, res) => {
         .btn-call { display: inline-block; width: 100%; background: #ef4444; color: #fff; text-decoration: none; padding: 1rem; border-radius: 12px; font-weight: 700; margin-top: 1rem; }
         .btn-link { display: inline-block; width: 100%; background: #0ea5e9; color: #fff; text-decoration: none; padding: 1rem; border-radius: 12px; font-weight: 700; margin-top: 1rem; }
 
-        /* Modal Username UI 14/15 */
+        /* Modal Username */
         #nameModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 100; }
         .modal-box { background: #fff; padding: 2.5rem 2rem; border-radius: 24px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         .modal-box input { width: 100%; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; margin: 1.5rem 0; outline: none; text-align: center; }
+
+        /* STYLES CỦA FILE GỘP (MINDFUL APP) */
+        .progress-bar-container { background: #e0e0e0; border-radius: 10px; height: 20px; width: 100%; overflow: hidden; margin-top: 10px; }
+        .progress-bar { background: var(--primary-green); height: 100%; width: 0%; transition: width 0.5s ease; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .stat-box { text-align: center; padding: 20px; background: #e8f5e9; border-radius: 10px; }
+        .stat-box h3 { font-size: 30px; color: var(--primary-green-dark); }
+
+        .breathe-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 350px; }
+        .circle-outer { width: 230px; height: 230px; border-radius: 50%; background: rgba(76, 175, 80, 0.2); display: flex; align-items: center; justify-content: center; transition: all 1s linear; }
+        .circle-inner { width: 100px; height: 100px; border-radius: 50%; background: var(--primary-green); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: bold; text-align: center; box-shadow: 0 0 20px rgba(76, 175, 80, 0.5); }
+        .breathe-text { font-size: 16px; margin-bottom: 2px; }
+        .breathe-timer { font-size: 22px; }
+        .music-player { margin-top: 20px; width: 100%; text-align: center; }
+
+        .challenge-box { background: #fff3e0; padding: 15px; border-left: 5px solid #ff9800; margin-bottom: 20px; border-radius: 4px; }
+        .journal-form textarea { width: 100%; height: 100px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; resize: none; margin-bottom: 15px; }
+        .emoji-selector { display: flex; gap: 15px; margin-bottom: 15px; font-size: 30px; justify-content: center; cursor: pointer; }
+        .emoji { opacity: 0.4; transition: 0.2s; }
+        .emoji.selected, .emoji:hover { opacity: 1; transform: scale(1.2); }
+        
+        .tracker-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-top: 20px; }
+        .tracker-day { background: #f0f0f0; border-radius: 5px; padding: 10px; text-align: center; font-size: 14px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .tracker-day.completed { background: #e8f5e9; border: 1px solid var(--primary-green); }
+        
+        .message-box { display: none; background: #e3f2fd; color: #1565c0; padding: 15px; border-radius: 5px; margin-top: 15px; text-align: center; font-style: italic; }
     </style>
 </head>
 <body>
@@ -253,7 +278,7 @@ app.get('/', (req, res) => {
     </div>
 
     <header>
-        <div class="app-title">📖 Spotlight Check</div>
+        <div class="app-title">📖 Spotlight Check & Mindful Space</div>
         <div class="slogan">Hôm nay bạn thế nào? Luôn có một không gian an toàn ở đây cho bạn.</div>
     </header>
 
@@ -263,15 +288,18 @@ app.get('/', (req, res) => {
             <div class="streak-badge">🔥 <span id="streakCount">1</span> Ngày</div>
         </div>
 
-        <!-- Tab Bar bổ sung Tab Bức Tường Đồng Cảm từ bản 13 -->
+        <!-- Navigation Bar chứa full Tabs của cả 2 file -->
         <div class="nav-tabs">
             <button class="tab-btn active" onclick="switchTab(event, 'journal')">Sổ Tay Phản Tư</button>
             <button class="tab-btn" onclick="switchTab(event, 'ai-chat')">AI Tâm Lý & Thử Thách</button>
             <button class="tab-btn" onclick="switchTab(event, 'wall')">Bức Tường Đồng Cảm</button>
+            <button class="tab-btn" onclick="switchTab(event, 'progress')">📊 Tiến Trình</button>
+            <button class="tab-btn" onclick="switchTab(event, 'breathe')">🫁 Tập Thở</button>
+            <button class="tab-btn" onclick="switchTab(event, 'challenge-21')">🎯 Thử Thách 21 Ngày</button>
             <button class="tab-btn" onclick="switchTab(event, 'support')">Hỗ Trợ Chuyên Gia</button>
         </div>
         
-        <!-- TAB 1: SỔ TAY PHẢN TƯ & KÍNH LÚP (Full Logic bản 13 + UI 14/15) -->
+        <!-- TAB 1: SỔ TAY PHẢN TƯ & KÍNH LÚP (Bản 17) -->
         <div id="journal" class="tab-content active">
             <div class="notebook-card">
                 <div class="card-title">Phần 1: Nhìn nhận lại sự cố</div>
@@ -300,7 +328,7 @@ app.get('/', (req, res) => {
             <button class="btn" onclick="saveJournal()">Gấp Sổ Tay (Lưu Tiến Trình)</button>
         </div>
 
-        <!-- TAB 2: AI TÂM LÝ & THỬ THÁCH -->
+        <!-- TAB 2: AI TÂM LÝ & THỬ THÁCH (Bản 17) -->
         <div id="ai-chat" class="tab-content">
             <div class="chat-challenge-banner">
                 <div style="font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; opacity:0.8;">Thử thách dũng cảm hôm nay</div>
@@ -318,19 +346,90 @@ app.get('/', (req, res) => {
             </div>
         </div>
 
-        <!-- TAB 3: BỨC TƯỜNG ĐỒNG CẢMẨN DANH (Khôi phục toàn bộ từ bản 13) -->
+        <!-- TAB 3: BỨC TƯỜNG ĐỒNG CẢM (Bản 17) -->
         <div id="wall" class="tab-content">
             <div class="notebook-card">
                 <div class="card-title">Chia sẻ câu chuyện của bạn</div>
                 <textarea id="wallInput" class="notebook-input" placeholder="Viết một suy nghĩ hoặc sự cố nhỏ hôm nay (hoàn toàn ẩn danh)..." oninput="autoResize(this)"></textarea>
                 <button class="btn" style="margin-top:10px;" onclick="postToWall()">Gửi Lên Bức Tường 💌</button>
             </div>
-            <div id="wallPostsContainer">
-                <!-- Wall posts render dynamically -->
+            <div id="wallPostsContainer"></div>
+        </div>
+
+        <!-- TAB 4: TIẾN TRÌNH (Tích hợp từ file mới) -->
+        <div id="progress" class="tab-content">
+            <h2 style="margin-bottom: 20px; color: var(--primary-green-dark);">Tiến trình của bạn</h2>
+            <div class="notebook-card">
+                <p style="position:relative; z-index:2; font-weight:bold;">Hành trình 21 ngày thay đổi bản thân</p>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="main-progress"></div>
+                </div>
+                <p style="text-align: right; margin-top: 5px; font-weight: bold; position:relative; z-index:2;" id="progress-text">0/21 ngày</p>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <h3 id="stat-days">0</h3>
+                    <p>Ngày đã hoàn thành</p>
+                </div>
+                <div class="stat-box">
+                    <h3 id="stat-breathe">0</h3>
+                    <p>Phút tập thở</p>
+                </div>
             </div>
         </div>
 
-        <!-- TAB 4: HỖ TRỢ CHUYÊN GIA -->
+        <!-- TAB 5: TẬP THỞ BOX BREATHING (Tích hợp từ file mới) -->
+        <div id="breathe" class="tab-content">
+            <h2 style="margin-bottom: 20px; color: var(--primary-green-dark);">Tập thở Box Breathing</h2>
+            <div class="notebook-card" style="text-align: center;">
+                <div class="breathe-container">
+                    <div class="circle-outer" id="circle-outer">
+                        <div class="circle-inner">
+                            <span class="breathe-text" id="breathe-text">Chuẩn bị</span>
+                            <span class="breathe-timer" id="breathe-timer">4</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-green" id="btn-breathe" style="margin-top: 25px;" onclick="toggleBreathe()">Bắt đầu tập</button>
+                </div>
+                
+                <div class="music-player">
+                    <p style="font-size: 14px; margin-bottom: 10px; color: var(--text-muted); position:relative; z-index:2;">* Bấm Play video dưới đây để nghe nhạc thiền</p>
+                    <iframe width="100%" height="180" src="https://www.youtube.com/embed/fuXfT4Rv_WM" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:12px;"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: THỬ THÁCH 21 NGÀY (Tích hợp từ file mới) -->
+        <div id="challenge-21" class="tab-content">
+            <h2 style="margin-bottom: 20px; color: var(--primary-green-dark);">Thử thách 21 Ngày</h2>
+            <div class="notebook-card">
+                <h3 style="position:relative; z-index:2; margin-bottom:10px;">Nhiệm vụ hôm nay (<span id="current-day-label">Ngày 1</span>)</h3>
+                <div class="challenge-box">
+                    <strong style="font-size: 18px;" id="daily-task">Đang tải thử thách...</strong>
+                </div>
+
+                <div class="journal-form">
+                    <p style="position:relative; z-index:2; margin-bottom:10px;"><strong>Cảm giác của bạn hôm nay thế nào?</strong></p>
+                    <div class="emoji-selector" id="emoji-list">
+                        <span class="emoji" onclick="selectEmoji('😢', event)">😢</span>
+                        <span class="emoji" onclick="selectEmoji('😕', event)">😕</span>
+                        <span class="emoji" onclick="selectEmoji('😐', event)">😐</span>
+                        <span class="emoji" onclick="selectEmoji('🙂', event)">🙂</span>
+                        <span class="emoji" onclick="selectEmoji('😄', event)">😄</span>
+                    </div>
+                    <textarea id="journal-entry" class="notebook-input" style="border:1px solid #e5e7eb; border-radius:8px; padding:10px; background:#fff;" placeholder="Ghi nhận lại hôm nay bạn đã thực hiện ra sao..."></textarea>
+                    <button class="btn btn-green" style="margin-top:15px;" onclick="saveDailyProgress()">Lưu ghi nhận hôm nay</button>
+                </div>
+                <div id="motivation-message" class="message-box"></div>
+            </div>
+
+            <div class="notebook-card">
+                <h3 style="position:relative; z-index:2;">Bảng theo dõi 21 ngày</h3>
+                <div class="tracker-grid" id="tracker-board"></div>
+            </div>
+        </div>
+
+        <!-- TAB 7: HỖ TRỢ CHUYÊN GIA (Bản 17) -->
         <div id="support" class="tab-content">
             <div class="support-card">
                 <h3 style="color:var(--text); font-weight:800;">Tổng đài Bảo vệ Trẻ em Quốc gia</h3>
@@ -346,6 +445,7 @@ app.get('/', (req, res) => {
     </div>
 
     <script>
+        // --- LOGIC BẢN 17 ---
         function autoResize(textarea) {
             textarea.style.height = '64px';
             textarea.style.height = (textarea.scrollHeight) + 'px';
@@ -360,6 +460,7 @@ app.get('/', (req, res) => {
                 setTimeout(() => splash.style.visibility = 'hidden', 600);
             }, 1200);
             checkUser();
+            initChallengeData();
         });
 
         function checkUser() {
@@ -392,7 +493,9 @@ app.get('/', (req, res) => {
             document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
             document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
             document.getElementById(tabId).classList.add("active");
-            evt.currentTarget.classList.add("active");
+            if (evt && evt.currentTarget) {
+                evt.currentTarget.classList.add("active");
+            }
             
             if (tabId === "ai-chat" && document.getElementById("challengeText").innerText.includes("Đang tải")) {
                 loadChallenge();
@@ -401,7 +504,6 @@ app.get('/', (req, res) => {
             }
         }
 
-        // Logic Kính lúp & Tái định khung bản 13
         async function predictAttention() {
             const event = document.getElementById("eventInput").value.trim();
             const perceived = document.getElementById("percentSlider").value;
@@ -481,7 +583,6 @@ app.get('/', (req, res) => {
             }
         }
 
-        // Feature Bức Tường Đồng Cảm bản 13
         async function loadWallPosts() {
             const container = document.getElementById("wallPostsContainer");
             try {
@@ -523,6 +624,163 @@ app.get('/', (req, res) => {
             } catch (e) {
                 alert("Không thể gửi bài viết lúc này.");
             }
+        }
+
+        // --- LOGIC TÍCH HỢP TỪ MINDFUL APP ---
+        let timerInterval;
+        let isBreathing = false;
+        let breatheMinutes = parseInt(localStorage.getItem('breatheMinutes')) || 0;
+        document.getElementById('stat-breathe').innerText = breatheMinutes;
+
+        const phases = [
+            { text: 'Hít vào', scale: '1.5', time: 4 },
+            { text: 'Giữ hơi', scale: '1.5', time: 4 },
+            { text: 'Thở ra', scale: '1', time: 4 },
+            { text: 'Giữ hơi', scale: '1', time: 4 }
+        ];
+
+        function toggleBreathe() {
+            const btn = document.getElementById('btn-breathe');
+            if (isBreathing) {
+                stopBreathe();
+                btn.innerText = 'Bắt đầu tập';
+                breatheMinutes++;
+                localStorage.setItem('breatheMinutes', breatheMinutes);
+                document.getElementById('stat-breathe').innerText = breatheMinutes;
+            } else {
+                startBreathe();
+                btn.innerText = 'Dừng tập';
+            }
+            isBreathing = !isBreathing;
+        }
+
+        function startBreathe() {
+            let phaseIndex = 0;
+            let timeLeft = phases[phaseIndex].time;
+            
+            const outerCircle = document.getElementById('circle-outer');
+            const textEl = document.getElementById('breathe-text');
+            const timerEl = document.getElementById('breathe-timer');
+
+            function updatePhase() {
+                textEl.innerText = phases[phaseIndex].text;
+                outerCircle.style.transform = `scale(\${phases[phaseIndex].scale})`;
+                timeLeft = phases[phaseIndex].time;
+                timerEl.innerText = timeLeft;
+            }
+
+            updatePhase();
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft > 0) {
+                    timerEl.innerText = timeLeft;
+                } else {
+                    phaseIndex = (phaseIndex + 1) % phases.length;
+                    updatePhase();
+                }
+            }, 1000);
+        }
+
+        function stopBreathe() {
+            clearInterval(timerInterval);
+            document.getElementById('circle-outer').style.transform = 'scale(1)';
+            document.getElementById('breathe-text').innerText = 'Chuẩn bị';
+            document.getElementById('breathe-timer').innerText = '4';
+        }
+
+        const taskList = [
+            "Dành 15 phút đọc sách hoặc nghe podcast tích cực.",
+            "Đi dạo 20 phút mà không mang theo điện thoại.",
+            "Uống đủ 2 lít nước và ăn nhiều rau xanh hôm nay.",
+            "Viết ra 3 điều bạn cảm thấy biết ơn lúc này.",
+            "Dọn dẹp lại góc làm việc/phòng ngủ cho gọn gàng.",
+            "Nhắn tin hỏi thăm một người bạn/người thân đã lâu không gặp.",
+            "Thực hiện bài tập thở Box Breathing 5 lần.",
+            "Tránh xa mạng xã hội ít nhất 3 tiếng trước khi ngủ."
+        ];
+
+        const quotes = [
+            "Tuyệt vời! Mỗi bước đi nhỏ đều tạo nên hành trình lớn. Hãy giữ vững phong độ nhé!",
+            "Bạn làm tốt lắm! Cảm xúc nào cũng đáng trân trọng, quan trọng là bạn đã không bỏ cuộc.",
+            "Ghi nhận hoàn tất! Đừng quên tự thưởng cho mình một nụ cười vì sự cố gắng hôm nay.",
+            "Xuất sắc! Kỷ luật chính là chiếc cầu nối giữa mục tiêu và thành tựu."
+        ];
+
+        let appData = JSON.parse(localStorage.getItem('mindfulAppData')) || {};
+        let currentSelectedEmoji = '';
+        
+        const startDate = localStorage.getItem('startDate') || new Date().toDateString();
+        if(!localStorage.getItem('startDate')) localStorage.setItem('startDate', startDate);
+        
+        const dayDiff = Math.floor((new Date() - new Date(startDate)) / (1000 * 60 * 60 * 24));
+        const currentDayIndex = Math.min(dayDiff + 1, 21);
+
+        function initChallengeData() {
+            document.getElementById('current-day-label').innerText = `Ngày \${currentDayIndex}`;
+            
+            const taskIndex = (new Date().getDate() + currentDayIndex) % taskList.length;
+            document.getElementById('daily-task').innerText = taskList[taskIndex];
+
+            renderTracker();
+            updateProgressData();
+        }
+
+        function selectEmoji(emoji, e) {
+            document.querySelectorAll('.emoji').forEach(el => el.classList.remove('selected'));
+            if(e && e.target) e.target.classList.add('selected');
+            currentSelectedEmoji = emoji;
+        }
+
+        function saveDailyProgress() {
+            const journal = document.getElementById('journal-entry').value;
+            if (!currentSelectedEmoji) {
+                alert("Hãy chọn 1 cảm xúc của bạn hôm nay nhé!");
+                return;
+            }
+
+            appData[`day_\${currentDayIndex}`] = {
+                emoji: currentSelectedEmoji,
+                journal: journal,
+                completed: true
+            };
+            localStorage.setItem('mindfulAppData', JSON.stringify(appData));
+
+            const msgBox = document.getElementById('motivation-message');
+            msgBox.innerText = quotes[Math.floor(Math.random() * quotes.length)];
+            msgBox.style.display = 'block';
+
+            document.getElementById('journal-entry').value = '';
+            document.querySelectorAll('.emoji').forEach(el => el.classList.remove('selected'));
+            currentSelectedEmoji = '';
+
+            renderTracker();
+            updateProgressData();
+        }
+
+        function renderTracker() {
+            const board = document.getElementById('tracker-board');
+            board.innerHTML = '';
+            for (let i = 1; i <= 21; i++) {
+                const dayData = appData[`day_\${i}`];
+                const isCompleted = dayData && dayData.completed;
+                
+                board.innerHTML += `
+                    <div class="tracker-day \${isCompleted ? 'completed' : ''}">
+                        <strong>N. \${i}</strong>
+                        <span>\${isCompleted ? dayData.emoji : '⚪'}</span>
+                    </div>
+                `;
+            }
+        }
+
+        function updateProgressData() {
+            const completedDays = Object.keys(appData).filter(key => appData[key].completed).length;
+            const percentage = Math.min((completedDays / 21) * 100, 100);
+            
+            document.getElementById('main-progress').style.width = percentage + '%';
+            document.getElementById('progress-text').innerText = `\${completedDays}/21 ngày`;
+            document.getElementById('stat-days').innerText = completedDays;
         }
     </script>
 </body>
