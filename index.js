@@ -8,7 +8,6 @@ app.use(cors({ origin: '*', methods: ['GET', 'POST'] }));
 app.use(express.json());
 
 // 1. IN-MEMORY DATABASE & KNOWLEDGE DATASET
-// Cập nhật cấu trúc câu hỏi thử thách theo format mới
 const dailyChallenges = [
     "Liệu hôm nay bạn có dám mỉm cười và chào hỏi một người bạn chưa từng nói chuyện?",
     "Liệu hôm nay bạn có dám đưa ra ý kiến trong buổi họp/tiết học mà không lo sợ bị đánh giá?",
@@ -17,14 +16,12 @@ const dailyChallenges = [
     "Liệu hôm nay bạn có dám nhận lỗi một cách thẳng thắn mà không tìm cãi lý?"
 ];
 
-// Bức tường đồng cảm ẩn danh
 let anonymousWallPosts = [
-    { id: 1, author: 'Thành viên ẩn danh', text: 'Hôm nay tớ lỡ gọi lộn tên đồng nghiệp. Tưởng quê lắm nhưng 5 phút sau mọi người quên hết sạch!', time: '10 phút trước' },
-    { id: 2, author: 'Bạn cùng tần số', text: 'Vừa thuyết trình bị vấp từ. Dùng AI dự đoán mới biết mọi người chỉ chú ý 12% thôi, nhẹ cả người.', time: '45 phút trước' },
-    { id: 3, author: 'Ẩn danh 082', text: 'Đừng quá khắt khe với bản thân nhé mọi người. AI nói đúng: Ai cũng bận lo cho bản thân họ thôi!', time: '2 giờ trước' }
+    { id: 1, author: 'Thành viên ẩn danh #102', text: 'Hôm nay tớ lỡ gọi lộn tên đồng nghiệp. Tưởng quê lắm nhưng 5 phút sau mọi người quên hết sạch!', time: '10 phút trước' },
+    { id: 2, author: 'Bạn cùng tần số #405', text: 'Vừa thuyết trình bị vấp từ. Dùng AI dự đoán mới biết mọi người chỉ chú ý 12% thôi, nhẹ cả người.', time: '45 phút trước' },
+    { id: 3, author: 'Ẩn danh #082', text: 'Đừng quá khắt khe với bản thân nhé mọi người. AI nói đúng: Ai cũng bận lo cho bản thân họ thôi!', time: '2 giờ trước' }
 ];
 
-// Thông điệp trấn an ngẫu nhiên cho Loading Screen
 const loadingAffirmations = [
     "Hít một hơi thật sâu nào, mọi chuyện rồi sẽ ổn thôi...",
     "Bạn đang làm rất tốt rồi, hãy chậm lại một chút nhé...",
@@ -32,9 +29,9 @@ const loadingAffirmations = [
     "Chào mừng bạn trở lại với không gian an toàn của chính mình..."
 ];
 
-// 2. BACKEND API ENDPOINTS
+// 2. BACKEND API ENDPOINTS (FULL LOGIC BẢN 13)
 
-// API AI Chatbot - Tích hợp xử lý tư vấn và khuyên nhủ
+// API Chatbot AI
 app.post('/api/chat', (req, res) => {
     try {
         const { message, userName } = req.body;
@@ -68,33 +65,56 @@ app.get('/api/challenge', (req, res) => {
     res.json({ success: true, challenge: random });
 });
 
-// Các API khác giữ nguyên logic lõi
-app.get('/api/wall', (req, res) => res.json({ success: true, posts: anonymousWallPosts }));
+// API Bức tường đồng cảm (Bản 13)
+app.get('/api/wall', (req, res) => {
+    res.json({ success: true, posts: anonymousWallPosts });
+});
+
 app.post('/api/wall', (req, res) => {
     try {
         const { text } = req.body;
-        if (!text || !text.trim()) return res.status(400).json({ success: false, error: 'Trống' });
-        const newPost = { id: Date.now(), author: `Thành viên ẩn danh #${Math.floor(100 + Math.random() * 900)}`, text: text.trim(), time: 'Vừa xong' };
+        if (!text || !text.trim()) return res.status(400).json({ success: false, error: 'Nội dung không được để trống' });
+        const newPost = { 
+            id: Date.now(), 
+            author: `Thành viên ẩn danh #${Math.floor(100 + Math.random() * 900)}`, 
+            text: text.trim(), 
+            time: 'Vừa xong' 
+        };
         anonymousWallPosts.unshift(newPost);
         res.json({ success: true, post: newPost });
-    } catch (err) { res.status(500).json({ success: false, error: 'Lỗi' }); }
+    } catch (err) { 
+        res.status(500).json({ success: false, error: 'Lỗi lưu bài viết' }); 
+    }
 });
+
+// API Kính lúp hiệu ứng Spotlight & Tái định khung
 app.post('/api/predict-spotlight', (req, res) => {
     try {
         const { event, perceivedPercent } = req.body;
         const perceived = parseInt(perceivedPercent) || 50;
-        const predictedActual = Math.max(6, Math.round(perceived * 0.18 + Math.random() * 6));
-        const explanation = `Theo thực nghiệm tâm lý xã hội, khi bạn ngỡ như có ${perceived}% ánh nhìn hướng về mình, mức độ chú ý THỰC TẾ từ đám đông chỉ đạt khoảng ${predictedActual}%. Đa số mọi người đang bị cuốn vào luồng suy nghĩ riêng của họ.`;
+        const predictedActual = Math.max(5, Math.round(perceived * 0.18 + Math.random() * 5));
+        
+        const explanation = `Theo thực nghiệm tâm lý xã hội, khi bạn nghĩ có ${perceived}% đám đông đang chú ý đến sự cố của bạn, mức độ thực tế họ ghi nhớ chỉ đạt khoảng ${predictedActual}%. Hầu hết mọi người chỉ tập trung vào vấn đề cá nhân của họ.`;
+        
         const reframes = [
-            `1. Góc nhìn thực tế: Sự cố này chỉ kéo dài vài giây, người khác sẽ quên ngay khi họ mở điện thoại ra.`,
-            `2. Tái định khung: Sai sót là minh chứng bạn đang dũng cảm thử thách bản thân.`,
-            `3. Sự đồng cảm: Đám đông thường có xu hướng thông cảm hơn là phán xét gắt gao.`
+            "1. Góc nhìn thực tế: Sự cố này chỉ kéo dài vài giây, người khác sẽ quên ngay khi chuyển sang hoạt động tiếp theo.",
+            "2. Tái định khung: Sai sót là minh chứng bạn đang dũng cảm hành động và bước ra khỏi vùng an toàn.",
+            "3. Sự đồng cảm: Mọi người xung quanh thường có xu hướng cảm thông hơn là khắt khe phán xét."
         ];
-        setTimeout(() => res.json({ success: true, perceivedPercent: perceived, predictedPercent: predictedActual, explanation, reframes }), 400);
-    } catch (err) { res.status(500).json({ success: false, error: 'Lỗi' }); }
+        
+        setTimeout(() => res.json({ 
+            success: true, 
+            perceivedPercent: perceived, 
+            predictedPercent: predictedActual, 
+            explanation, 
+            reframes 
+        }), 400);
+    } catch (err) { 
+        res.status(500).json({ success: false, error: 'Lỗi tính toán' }); 
+    }
 });
 
-// 3. FRONTEND SINGLE PAGE APPLICATION (SPA)
+// 3. FRONTEND SPA (UX/UI BẢN 14/15 + TÍNH NĂNG BẢN 13)
 app.get('/', (req, res) => {
     const htmlContent = `
 <!DOCTYPE html>
@@ -102,16 +122,15 @@ app.get('/', (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spotlight Check</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Spotlight Check - Sổ Tay Phản Tư</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Nunito:wght@400;600;700;800&display=swap');
         
         :root {
-            --primary: #5b21b6; /* Tím trầm tĩnh */
+            --primary: #5b21b6;
             --primary-light: #ede9fe;
             --accent: #10b981;
-            --bg: #f9f8f6; /* Màu giấy sổ tay */
+            --bg: #f9f8f6;
             --paper: #ffffff;
             --text: #374151;
             --text-muted: #6b7280;
@@ -120,24 +139,38 @@ app.get('/', (req, res) => {
         }
         
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Nunito', sans-serif; }
-        body { background: var(--bg); color: var(--text); padding-bottom: 3rem; background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h100v100H0z' fill='%23f9f8f6'/%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M0 0h100v100H0V0zm2 2h96v96H2V2z' fill='%23f1f0ee'/%3E%3C/svg%3E"); }
+        body { 
+            background: var(--bg); 
+            color: var(--text); 
+            padding-bottom: 3rem; 
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h100v100H0z' fill='%23f9f8f6'/%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M0 0h100v100H0V0zm2 2h96v96H2V2z' fill='%23f1f0ee'/%3E%3C/svg%3E"); 
+        }
         
-        /* Loading */
-        #splashLoader { position: fixed; top:0; left:0; width:100vw; height:100vh; background: #faf9f6; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.6s ease, visibility 0.6s; }
-        .aura-circle { width: 100px; height: 100px; border-radius: 50%; border: 4px solid var(--primary-light); border-top-color: var(--primary); animation: spin 1s linear infinite; margin-bottom: 1.5rem; }
+        /* Splash Loader UI 14/15 */
+        #splashLoader { 
+            position: fixed; top:0; left:0; width:100vw; height:100vh; 
+            background: #faf9f6; display: flex; flex-direction: column; 
+            justify-content: center; align-items: center; z-index: 9999; 
+            transition: opacity 0.6s ease, visibility 0.6s; 
+        }
+        .aura-circle { 
+            width: 90px; height: 90px; border-radius: 50%; 
+            border: 4px solid var(--primary-light); border-top-color: var(--primary); 
+            animation: spin 1s linear infinite; margin-bottom: 1.5rem; 
+        }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .splash-msg { color: var(--text); font-family: 'Lora', serif; font-style: italic; text-align: center; max-width: 80%; font-size: 1.1rem; }
 
         header { background: #fff; padding: 1.5rem 1rem; text-align: center; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
         .app-title { font-size: 1.6rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; justify-content: center; gap: 8px; letter-spacing: -0.5px; }
-        .slogan { font-size: 0.95rem; color: var(--text-muted); margin-top: 8px; font-style: italic; font-family: 'Lora', serif; }
+        .slogan { font-size: 0.95rem; color: var(--text-muted); margin-top: 6px; font-style: italic; font-family: 'Lora', serif; }
         
-        .container { max-width: 600px; margin: 1.5rem auto; padding: 0 1rem; }
+        .container { max-width: 620px; margin: 1.5rem auto; padding: 0 1rem; }
         
         .user-bar { background: #fff; padding: 1rem 1.2rem; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
         .streak-badge { background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; }
         
-        /* Cấu trúc Sổ tay */
+        /* Cấu trúc Sổ tay UI 14/15 */
         .notebook-card {
             background: var(--paper);
             border-radius: 8px;
@@ -156,64 +189,64 @@ app.get('/', (req, res) => {
         .notebook-input { width: 100%; background: transparent; border: none; font-size: 1rem; line-height: 32px; resize: none; outline: none; font-family: 'Lora', serif; color: #1f2937; padding: 0; min-height: 64px; overflow: hidden; }
         .notebook-input::placeholder { color: #9ca3af; font-style: italic; }
         
-        /* Navigation (Dấu trang) */
+        /* Navigation (Dấu trang UI 14/15) */
         .nav-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.5rem; justify-content: center; }
-        .tab-btn { background: #fff; border: 1px solid #e5e7eb; padding: 0.7rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700; cursor: pointer; color: var(--text-muted); transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .tab-btn { background: #fff; border: 1px solid #e5e7eb; padding: 0.65rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700; cursor: pointer; color: var(--text-muted); transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(91, 33, 182, 0.2); }
         .tab-content { display: none; animation: fadeIn 0.4s ease; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Buttons & Controls */
+        /* Controls */
         .slider-container { background: #fff; padding: 1rem; border-radius: 12px; border: 1px dashed #cbd5e1; margin: 1rem 0; position: relative; z-index: 2; text-align: center; }
         .slider-val { font-size: 1.5rem; font-weight: 800; color: #ef4444; }
         input[type="range"] { width: 100%; accent-color: var(--primary); margin-top: 10px; }
         
         .btn { width: 100%; padding: 1rem; border: none; border-radius: 12px; background: var(--primary); color: #fff; font-weight: 700; cursor: pointer; transition: transform 0.2s; font-size: 1rem; position: relative; z-index: 2; }
         .btn:active { transform: scale(0.98); }
-        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
         
         .ai-result-box { display: none; margin-top: 1rem; background: var(--primary-light); border-left: 4px solid var(--primary); padding: 1.2rem; border-radius: 0 8px 8px 0; font-size: 0.95rem; color: #4c1d95; line-height: 1.6; position: relative; z-index: 2; font-family: 'Lora', serif; }
+        .reframe-item { background: #fff; padding: 0.6rem 0.8rem; border-radius: 6px; margin-top: 6px; font-size: 0.9rem; color: #374151; }
 
-        /* AI Chatbot & Challenge */
+        /* AI Chatbot & Wall UI */
         .chat-challenge-banner { background: linear-gradient(135deg, var(--primary), #8b5cf6); border-radius: 16px; padding: 1.5rem; color: #fff; margin-bottom: 1.5rem; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3); }
-        .challenge-q { font-size: 1.15rem; font-weight: 700; font-family: 'Lora', serif; font-style: italic; margin-top: 0.5rem; line-height: 1.5; }
+        .challenge-q { font-size: 1.1rem; font-weight: 700; font-family: 'Lora', serif; font-style: italic; margin-top: 0.5rem; line-height: 1.5; }
         
         .chat-wrapper { background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #f3f4f6; }
-        .chat-box { height: 350px; overflow-y: auto; padding: 1.5rem; background: #fdfaf6; }
+        .chat-box { height: 320px; overflow-y: auto; padding: 1.5rem; background: #fdfaf6; }
         .chat-msg { margin-bottom: 1rem; max-width: 85%; padding: 0.8rem 1rem; border-radius: 16px; font-size: 0.95rem; line-height: 1.5; }
         .chat-msg.bot { background: #fff; border: 1px solid #e5e7eb; color: var(--text); border-bottom-left-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .chat-msg.user { background: var(--primary); color: #fff; margin-left: auto; border-bottom-right-radius: 4px; }
         .chat-input-area { display: flex; padding: 1rem; background: #fff; border-top: 1px solid #f3f4f6; gap: 10px; }
         .chat-input-area input { flex: 1; border: 1px solid #e5e7eb; border-radius: 20px; padding: 0 1.2rem; font-size: 0.95rem; outline: none; }
-        .chat-input-area input:focus { border-color: var(--primary); }
         .chat-input-area button { width: auto; padding: 0.8rem 1.5rem; border-radius: 20px; }
 
-        /* Support Links */
-        .support-card { background: #fff; border-radius: 12px; padding: 1.5rem; text-align: center; margin-bottom: 1rem; border: 1px solid #e5e7eb; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
-        .btn-call { display: inline-block; width: 100%; background: #ef4444; color: #fff; text-decoration: none; padding: 1rem; border-radius: 12px; font-weight: 700; margin-top: 1rem; transition: opacity 0.2s; }
-        .btn-link { display: inline-block; width: 100%; background: #0ea5e9; color: #fff; text-decoration: none; padding: 1rem; border-radius: 12px; font-weight: 700; margin-top: 1rem; transition: opacity 0.2s; }
-        .btn-call:hover, .btn-link:hover { opacity: 0.9; }
+        /* Bức tường đồng cảm (Bản 13 UI) */
+        .wall-post-card { background: #fff; border-radius: 12px; padding: 1.2rem; margin-bottom: 1rem; border: 1px solid #e5e7eb; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+        .wall-author { font-size: 0.85rem; font-weight: 700; color: var(--primary); display: flex; justify-content: space-between; }
+        .wall-text { font-size: 0.95rem; margin-top: 6px; font-family: 'Lora', serif; color: var(--text); line-height: 1.5; }
 
-        /* Modal Login - Đơn giản hóa */
+        /* Support Links */
+        .support-card { background: #fff; border-radius: 12px; padding: 1.5rem; text-align: center; margin-bottom: 1rem; border: 1px solid #e5e7eb; }
+        .btn-call { display: inline-block; width: 100%; background: #ef4444; color: #fff; text-decoration: none; padding: 1rem; border-radius: 12px; font-weight: 700; margin-top: 1rem; }
+        .btn-link { display: inline-block; width: 100%; background: #0ea5e9; color: #fff; text-decoration: none; padding: 1rem; border-radius: 12px; font-weight: 700; margin-top: 1rem; }
+
+        /* Modal Username UI 14/15 */
         #nameModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 100; }
         .modal-box { background: #fff; padding: 2.5rem 2rem; border-radius: 24px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .modal-box input { width: 100%; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; margin: 1.5rem 0; outline: none; transition: border 0.3s; text-align: center; }
-        .modal-box input:focus { border-color: var(--primary); }
+        .modal-box input { width: 100%; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; margin: 1.5rem 0; outline: none; text-align: center; }
     </style>
 </head>
 <body>
-    <!-- Splash Screen -->
     <div id="splashLoader">
         <div class="aura-circle"></div>
         <div class="splash-msg" id="splashMsg">Đang chuẩn bị trang giấy mới cho bạn...</div>
     </div>
 
-    <!-- Login Modal (Chỉ cần Tên) -->
     <div id="nameModal">
         <div class="modal-box">
             <h2 style="color:var(--primary); font-weight:800; font-size:1.8rem;">Spotlight Check</h2>
-            <p style="color:var(--text-muted); margin-top:10px; font-family:'Lora', serif;">Không cần đăng ký phức tạp, hãy cho chúng tớ biết tên gọi mà bạn yêu thích nhất.</p>
+            <p style="color:var(--text-muted); margin-top:10px; font-family:'Lora', serif;">Hãy cho chúng tớ biết tên gọi mà bạn thích nhất nhé.</p>
             <input type="text" id="usernameInput" placeholder="Nhập tên của bạn...">
             <button class="btn" onclick="saveName()">Mở Sổ Tay</button>
         </div>
@@ -221,7 +254,7 @@ app.get('/', (req, res) => {
 
     <header>
         <div class="app-title">📖 Spotlight Check</div>
-        <div class="slogan">Hôm nay bạn thế nào? Dù có vui hay buồn thì vẫn luôn có chúng tớ ở đây.</div>
+        <div class="slogan">Hôm nay bạn thế nào? Luôn có một không gian an toàn ở đây cho bạn.</div>
     </header>
 
     <div class="container">
@@ -230,24 +263,26 @@ app.get('/', (req, res) => {
             <div class="streak-badge">🔥 <span id="streakCount">1</span> Ngày</div>
         </div>
 
+        <!-- Tab Bar bổ sung Tab Bức Tường Đồng Cảm từ bản 13 -->
         <div class="nav-tabs">
             <button class="tab-btn active" onclick="switchTab(event, 'journal')">Sổ Tay Phản Tư</button>
             <button class="tab-btn" onclick="switchTab(event, 'ai-chat')">AI Tâm Lý & Thử Thách</button>
+            <button class="tab-btn" onclick="switchTab(event, 'wall')">Bức Tường Đồng Cảm</button>
             <button class="tab-btn" onclick="switchTab(event, 'support')">Hỗ Trợ Chuyên Gia</button>
         </div>
         
-        <!-- TAB 1: SỔ TAY -->
+        <!-- TAB 1: SỔ TAY PHẢN TƯ & KÍNH LÚP (Full Logic bản 13 + UI 14/15) -->
         <div id="journal" class="tab-content active">
             <div class="notebook-card">
-                <div class="card-title">Phần 1: Nhìn nhận lại vấn đề</div>
-                <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:5px; position:relative; z-index:2;">Sự kiện / Tình huống khiến bạn lo lắng là gì?</p>
-                <textarea id="eventInput" class="notebook-input" placeholder="Ví dụ: Lỡ phát biểu vấp trong cuộc họp..." oninput="autoResize(this)"></textarea>
+                <div class="card-title">Phần 1: Nhìn nhận lại sự cố</div>
+                <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:5px; position:relative; z-index:2;">Sự kiện khiến bạn lo lắng/xấu hổ là gì?</p>
+                <textarea id="eventInput" class="notebook-input" placeholder="Ví dụ: Lỡ nói vấp một từ khi phát biểu..." oninput="autoResize(this)"></textarea>
                 
-                <p style="font-size:0.9rem; color:var(--text-muted); margin:15px 0 5px; position:relative; z-index:2;">Mọi người đang phán xét bạn thế nào?</p>
-                <textarea id="judgeInput" class="notebook-input" placeholder="Tôi sợ họ nghĩ tôi kém cỏi..." oninput="autoResize(this)"></textarea>
+                <p style="font-size:0.9rem; color:var(--text-muted); margin:15px 0 5px; position:relative; z-index:2;">Bạn nghĩ họ đang đánh giá bạn thế nào?</p>
+                <textarea id="judgeInput" class="notebook-input" placeholder="Tớ nghĩ họ đang cười thầm và chê tớ kém cỏi..." oninput="autoResize(this)"></textarea>
                 
                 <div class="slider-container">
-                    <p style="font-size:0.9rem; font-weight:700; color:var(--text);">Bạn cảm thấy mức độ chú ý của họ là bao nhiêu %?</p>
+                    <p style="font-size:0.9rem; font-weight:700; color:var(--text);">Bạn nghĩ mức độ chú ý của họ là bao nhiêu %?</p>
                     <div class="slider-val" id="percentVal">50%</div>
                     <input type="range" id="percentSlider" min="0" max="100" value="50" oninput="document.getElementById('percentVal').innerText = this.value + '%'">
                 </div>
@@ -257,55 +292,65 @@ app.get('/', (req, res) => {
             </div>
 
             <div class="notebook-card">
-                <div class="card-title" style="color:var(--accent);">Phần 2: Kiểm chứng thực tế</div>
-                <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:5px; position:relative; z-index:2;">Có bằng chứng nào cho thấy mọi người THỰC SỰ để ý đến bạn không?</p>
-                <textarea id="proofInput" class="notebook-input" placeholder="Hình như không ai cười hay nói gì cả..." oninput="autoResize(this)"></textarea>
+                <div class="card-title" style="color:var(--accent);">Phần 2: Bằng chứng thực tế</div>
+                <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:5px; position:relative; z-index:2;">Có bằng chứng rõ ràng nào cho thấy họ thực sự chú ý không?</p>
+                <textarea id="proofInput" class="notebook-input" placeholder="Hình như không ai nói gì, họ tiếp tục bấm điện thoại..." oninput="autoResize(this)"></textarea>
             </div>
             
-            <button class="btn" onclick="saveJournal()">Đóng Sổ Tay (Lưu tiến trình)</button>
+            <button class="btn" onclick="saveJournal()">Gấp Sổ Tay (Lưu Tiến Trình)</button>
         </div>
 
-        <!-- TAB 2: AI CHATBOT & THỬ THÁCH -->
+        <!-- TAB 2: AI TÂM LÝ & THỬ THÁCH -->
         <div id="ai-chat" class="tab-content">
             <div class="chat-challenge-banner">
-                <div style="font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; opacity:0.8;">Thử thách 21 Ngày</div>
-                <div class="challenge-q" id="challengeText">Đang tải thử thách hôm nay...</div>
+                <div style="font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; opacity:0.8;">Thử thách dũng cảm hôm nay</div>
+                <div class="challenge-q" id="challengeText">Đang tải thử thách...</div>
             </div>
 
             <div class="chat-wrapper">
                 <div class="chat-box" id="chatBox">
-                    <div class="chat-msg bot">Xin chào! Tớ là AI đồng hành của Spotlight Check. Bạn đã sẵn sàng để thực hiện thử thách hôm nay chưa, hay có tâm sự gì muốn kể tớ nghe không?</div>
+                    <div class="chat-msg bot">Xin chào! Tớ là AI đồng hành. Hôm nay bạn có điều gì trăn trở muốn tâm sự với tớ không?</div>
                 </div>
                 <div class="chat-input-area">
-                    <input type="text" id="chatInput" placeholder="Nhắn tin với AI..." onkeypress="if(event.key==='Enter') sendChat()">
+                    <input type="text" id="chatInput" placeholder="Nhắn tin chia sẻ với AI..." onkeypress="if(event.key==='Enter') sendChat()">
                     <button class="btn" onclick="sendChat()">Gửi</button>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 3: HỖ TRỢ CHUYÊN GIA -->
+        <!-- TAB 3: BỨC TƯỜNG ĐỒNG CẢMẨN DANH (Khôi phục toàn bộ từ bản 13) -->
+        <div id="wall" class="tab-content">
+            <div class="notebook-card">
+                <div class="card-title">Chia sẻ câu chuyện của bạn</div>
+                <textarea id="wallInput" class="notebook-input" placeholder="Viết một suy nghĩ hoặc sự cố nhỏ hôm nay (hoàn toàn ẩn danh)..." oninput="autoResize(this)"></textarea>
+                <button class="btn" style="margin-top:10px;" onclick="postToWall()">Gửi Lên Bức Tường 💌</button>
+            </div>
+            <div id="wallPostsContainer">
+                <!-- Wall posts render dynamically -->
+            </div>
+        </div>
+
+        <!-- TAB 4: HỖ TRỢ CHUYÊN GIA -->
         <div id="support" class="tab-content">
             <div class="support-card">
                 <h3 style="color:var(--text); font-weight:800;">Tổng đài Bảo vệ Trẻ em Quốc gia</h3>
-                <p style="font-size:0.95rem; color:var(--text-muted); margin-top:10px;">Hỗ trợ tư vấn khẩn cấp về sức khỏe tinh thần và bảo vệ tâm lý, hoạt động 24/7.</p>
+                <p style="font-size:0.95rem; color:var(--text-muted); margin-top:8px;">Hỗ trợ tư vấn khẩn cấp về sức khỏe tinh thần và bảo vệ tâm lý 24/7.</p>
                 <a href="tel:111" class="btn-call">📞 Liên hệ 111 (Miễn phí)</a>
             </div>
             <div class="support-card">
                 <h3 style="color:var(--text); font-weight:800;">Phòng tham vấn tâm lý học đường LTV</h3>
-                <p style="font-size:0.95rem; color:var(--text-muted); margin-top:10px;">Hỗ trợ chuyên sâu giúp bạn vượt qua lo âu xã hội, giải tỏa căng thẳng trong học tập.</p>
-                <a href="https://www.facebook.com/share/1CGCq3ZcUu/" target="_blank" class="btn-link">🔗 Truy cập Fanpage Tâm Lý LTV</a>
+                <p style="font-size:0.95rem; color:var(--text-muted); margin-top:8px;">Giúp bạn vượt qua lo âu xã hội và giải tỏa căng thẳng tâm lý.</p>
+                <a href="https://www.facebook.com/share/1CGCq3ZcUu/" target="_blank" class="btn-link">🔗 Fanpage Tâm Lý LTV</a>
             </div>
         </div>
     </div>
 
     <script>
-        // Auto resize textarea cho giống dòng kẻ sổ
         function autoResize(textarea) {
             textarea.style.height = '64px';
             textarea.style.height = (textarea.scrollHeight) + 'px';
         }
 
-        // Logic Splash & Khởi tạo
         window.addEventListener('DOMContentLoaded', () => {
             const affirmations = ${JSON.stringify(loadingAffirmations)};
             document.getElementById('splashMsg').innerText = affirmations[Math.floor(Math.random() * affirmations.length)];
@@ -313,11 +358,10 @@ app.get('/', (req, res) => {
                 const splash = document.getElementById('splashLoader');
                 splash.style.opacity = '0';
                 setTimeout(() => splash.style.visibility = 'hidden', 600);
-            }, 1500);
+            }, 1200);
             checkUser();
         });
 
-        // Xử lý Tên người dùng
         function checkUser() {
             const name = localStorage.getItem("spotlight_username");
             if (name) {
@@ -335,7 +379,7 @@ app.get('/', (req, res) => {
                 localStorage.setItem("spotlight_username", name);
                 checkUser();
             } else {
-                alert("Bạn nhập một cái tên nhé, biệt danh cũng được!");
+                alert("Bạn nhập tên hoặc biệt danh nhé!");
             }
         }
 
@@ -344,7 +388,6 @@ app.get('/', (req, res) => {
             document.getElementById("streakCount").innerText = streak;
         }
 
-        // Chuyển Tab
         function switchTab(evt, tabId) {
             document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
             document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
@@ -353,22 +396,24 @@ app.get('/', (req, res) => {
             
             if (tabId === "ai-chat" && document.getElementById("challengeText").innerText.includes("Đang tải")) {
                 loadChallenge();
+            } else if (tabId === "wall") {
+                loadWallPosts();
             }
         }
 
-        // Kính lúp sự thật (AI Predict)
+        // Logic Kính lúp & Tái định khung bản 13
         async function predictAttention() {
             const event = document.getElementById("eventInput").value.trim();
             const perceived = document.getElementById("percentSlider").value;
             const resDiv = document.getElementById("aiPredictionResult");
 
             if (!event) {
-                alert("Hãy viết ra tình huống khiến bạn bận tâm ở Phần 1 trước nhé.");
+                alert("Hãy ghi lại sự cố ở Phần 1 trước nhé.");
                 return;
             }
 
             resDiv.style.display = "block";
-            resDiv.innerHTML = "⏳ Kính lúp đang phân tích dữ liệu...";
+            resDiv.innerHTML = "⏳ Kính lúp sự thật đang phân tích...";
 
             try {
                 const response = await fetch("/api/predict-spotlight", {
@@ -379,19 +424,19 @@ app.get('/', (req, res) => {
                 const data = await response.json();
 
                 if (data.success) {
-                    resDiv.innerHTML = "<strong>🔍 Sự thật là:</strong><br>Sự chú ý THỰC TẾ từ đám đông chỉ khoảng <strong style='color:#ef4444; font-size:1.2rem;'>" + data.predictedPercent + "%</strong> (so với " + data.perceivedPercent + "% bạn tưởng tượng).<br><br>" + data.explanation;
+                    let reframesHtml = data.reframes.map(r => "<div class='reframe-item'>" + r + "</div>").join("");
+                    resDiv.innerHTML = "<strong>🔍 Kết quả phân tích:</strong><br>Sự chú ý THỰC TẾ từ người khác chỉ khoảng <strong style='color:#ef4444; font-size:1.2rem;'>" + data.predictedPercent + "%</strong> (thay vì " + data.perceivedPercent + "% bạn tưởng tượng).<br><br>" + data.explanation + "<br><br><strong>Gợi ý tái định khung tư duy:</strong>" + reframesHtml;
                 }
             } catch (err) {
-                resDiv.innerHTML = "❌ Lỗi kết nối AI. Vui lòng kiểm tra mạng.";
+                resDiv.innerHTML = "❌ Không thể kết nối hệ thống phân tích.";
             }
         }
 
-        // Đóng sổ
         function saveJournal() {
             let streak = parseInt(localStorage.getItem("spotlight_streak") || "1");
             localStorage.setItem("spotlight_streak", streak + 1);
             updateStreak();
-            alert("Trang sổ hôm nay đã được gấp lại. Cảm ơn bạn vì đã dũng cảm đối mặt với cảm xúc của chính mình!");
+            alert("Trang sổ hôm nay đã lưu lại. Bạn đã làm rất tốt!");
             document.getElementById("eventInput").value = "";
             document.getElementById("judgeInput").value = "";
             document.getElementById("proofInput").value = "";
@@ -399,20 +444,16 @@ app.get('/', (req, res) => {
             document.querySelectorAll('textarea').forEach(t => t.style.height = '64px');
         }
 
-        // Tải Thử thách
         async function loadChallenge() {
             try {
                 const res = await fetch("/api/challenge");
                 const data = await res.json();
-                if(data.success) {
-                    document.getElementById("challengeText").innerText = data.challenge;
-                }
+                if(data.success) document.getElementById("challengeText").innerText = data.challenge;
             } catch(e) {
-                document.getElementById("challengeText").innerText = "Liệu hôm nay bạn có dám mỉm cười chào hỏi một người bạn mới?";
+                document.getElementById("challengeText").innerText = "Liệu hôm nay bạn có dám mỉm cười chào một người bạn mới?";
             }
         }
 
-        // Gửi tin nhắn Chatbot
         async function sendChat() {
             const input = document.getElementById("chatInput");
             const msg = input.value.trim();
@@ -436,7 +477,51 @@ app.get('/', (req, res) => {
                     chatBox.scrollTop = chatBox.scrollHeight;
                 }
             } catch (err) {
-                chatBox.innerHTML += "<div class='chat-msg bot'>Tớ đang gặp chút trục trặc mạng, bạn chờ tớ xíu rồi nhắn lại nhé.</div>";
+                chatBox.innerHTML += "<div class='chat-msg bot'>Tớ gặp chút gián đoạn kết nối, bạn thử gửi lại nhé!</div>";
+            }
+        }
+
+        // Feature Bức Tường Đồng Cảm bản 13
+        async function loadWallPosts() {
+            const container = document.getElementById("wallPostsContainer");
+            try {
+                const res = await fetch("/api/wall");
+                const data = await res.json();
+                if (data.success) {
+                    container.innerHTML = data.posts.map(p => 
+                        "<div class='wall-post-card'>" +
+                            "<div class='wall-author'><span>" + p.author + "</span><span style='color:var(--text-muted); font-weight:normal;'>" + p.time + "</span></div>" +
+                            "<div class='wall-text'>" + p.text + "</div>" +
+                        "</div>"
+                    ).join("");
+                }
+            } catch (e) {
+                container.innerHTML = "<p style='text-align:center; color:var(--text-muted);'>Chưa tải được bức tường đồng cảm.</p>";
+            }
+        }
+
+        async function postToWall() {
+            const input = document.getElementById("wallInput");
+            const text = input.value.trim();
+            if (!text) {
+                alert("Bạn viết chút nội dung trước khi gửi nhé!");
+                return;
+            }
+
+            try {
+                const res = await fetch("/api/wall", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    input.value = "";
+                    input.style.height = "64px";
+                    loadWallPosts();
+                }
+            } catch (e) {
+                alert("Không thể gửi bài viết lúc này.");
             }
         }
     </script>
@@ -446,7 +531,7 @@ app.get('/', (req, res) => {
     res.send(htmlContent);
 });
 
-// 4. SERVER INITIALIZATION
+// 4. SERVER INIT
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Spotlight Check System running on port ${PORT}`);
+    console.log(`🚀 System running on port ${PORT}`);
 });
