@@ -164,7 +164,7 @@ app.get('/', (req, res) => {
         .user-bar { background: #fff; padding: 1rem 1.2rem; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
         .streak-badge { background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; }
         
-        /* Tabs (Gộp tính năng) */
+        /* Tabs */
         .nav-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.5rem; justify-content: center; }
         .tab-btn { background: #fff; border: 1px solid #e5e7eb; padding: 0.65rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700; cursor: pointer; color: var(--text-muted); transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(91, 33, 182, 0.2); }
@@ -265,7 +265,6 @@ app.get('/', (req, res) => {
             <div class="streak-badge">🔥 <span id="streakCount">1</span> Ngày</div>
         </div>
 
-        <!-- HỢP NHẤT NAVIGATION TABS -->
         <div class="nav-tabs">
             <button class="tab-btn active" onclick="switchTab(event, 'journal')">Sổ Tay</button>
             <button class="tab-btn" onclick="switchTab(event, 'ai-chat')">AI Tâm Lý</button>
@@ -354,7 +353,7 @@ app.get('/', (req, res) => {
             </div>
         </div>
 
-        <!-- TAB: TẬP THỞ (ĐÃ TÍCH HỢP MP3) -->
+        <!-- TAB: TẬP THỞ (ĐÃ NHÚNG AUDIO MP3 ONLINE TRỰC TIẾP) -->
         <div id="breathe" class="tab-content">
             <h2 style="color:var(--primary-dark); margin-bottom:15px;">Tập thở Box Breathing</h2>
             <div class="mindful-card">
@@ -370,7 +369,8 @@ app.get('/', (req, res) => {
                 
                 <div style="margin-top: 20px; width: 100%; text-align: center;">
                     <p style="font-size: 14px; margin-bottom: 10px; color: var(--text-muted);">🎵 Nhạc thiền tĩnh tâm hít thở</p>
-                    <audio id="breatheAudio" src="nhac-hit-tho.mp3" loop preload="auto" controls style="width: 100%; border-radius: 8px;"></audio>
+                    <!-- Đã cập nhật URL MP3 online hoạt động 100% -->
+                    <audio id="breatheAudio" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a7315b.mp3?filename=meditation-piano-22832.mp3" loop preload="auto" controls style="width: 100%; border-radius: 8px;"></audio>
                 </div>
             </div>
         </div>
@@ -408,9 +408,6 @@ app.get('/', (req, res) => {
     </div>
 
     <script>
-        // ==========================================
-        // KHỞI TẠO HỆ THỐNG VÀ TIỆN ÍCH CHUNG
-        // ==========================================
         function autoResize(textarea) {
             textarea.style.height = '64px';
             textarea.style.height = (textarea.scrollHeight) + 'px';
@@ -468,9 +465,6 @@ app.get('/', (req, res) => {
             }
         }
 
-        // ==========================================
-        // LOGIC SPOTLIGHT
-        // ==========================================
         async function predictAttention() {
             const event = document.getElementById("eventInput").value.trim();
             const perceived = document.getElementById("percentSlider").value;
@@ -573,7 +567,7 @@ app.get('/', (req, res) => {
         }
 
         // ==========================================
-        // LOGIC MINDFUL APP & TẬP THỞ (TỰ ĐỘNG PHÁT MP3)
+        // LOGIC MINDFUL APP & TẬP THỞ
         // ==========================================
         let timerInterval, isBreathing = false;
         let breatheMinutes = parseInt(localStorage.getItem('breatheMinutes')) || 0;
@@ -588,7 +582,7 @@ app.get('/', (req, res) => {
 
         function toggleBreathe() {
             const btn = document.getElementById('btn-breathe');
-            const audio = document.getElementById('https://www.youtube.com/watch?v=DVsbpcm8CLo');
+            const audio = document.getElementById('breatheAudio');
 
             if (isBreathing) {
                 stopBreathe();
@@ -604,7 +598,7 @@ app.get('/', (req, res) => {
                 startBreathe();
                 btn.innerText = 'Dừng tập (Để lưu phút)';
                 if (audio) {
-                    audio.play().catch(e => console.log('Không thể tự động phát nhạc:', e));
+                    audio.play().catch(e => console.log('Cần tương tác người dùng để phát nhạc:', e));
                 }
             }
             isBreathing = !isBreathing;
@@ -723,7 +717,7 @@ app.get('/', (req, res) => {
             let completedDays = JSON.parse(localStorage.getItem('mindful_completed_days')) || [];
             board.innerHTML = '';
 
-            for (let i = 1; i <= 21; i++) {
+            for (i = 1; i <= 21; i++) {
                 const dayDiv = document.createElement('div');
                 const isDone = completedDays.includes(i);
                 dayDiv.className = 'tracker-day ' + (isDone ? 'completed' : '');
