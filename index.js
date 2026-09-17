@@ -257,6 +257,10 @@ app.get('/', (req, res) => {
     <header>
         <div class="app-title">📖 Spotlight Check</div>
         <div class="slogan">Hôm nay bạn thế nào? Luôn có một không gian an toàn ở đây cho bạn.</div>
+        <div style="margin-top: 10px; font-size: 0.88rem; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; align-items: center; color: var(--text-muted);">
+            <span>📞 Hotline: <a href="tel:111" style="color: var(--primary); font-weight: 700; text-decoration: none;">111</a> (Tổng đài 24/7)</span>
+            <span>🌐 Facebook: <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" style="color: var(--primary); font-weight: 700; text-decoration: none;">Cộng đồng Hỗ trợ</a></span>
+        </div>
     </header>
 
     <div class="container">
@@ -358,6 +362,7 @@ app.get('/', (req, res) => {
         <div id="breathe" class="tab-content">
             <h2 style="color:var(--primary-dark); margin-bottom:15px;">Tập thở Box Breathing</h2>
             <div class="mindful-card">
+                <audio id="breatheAudio" src="audio.mp3" loop preload="auto"></audio>
                 <div class="breathe-container">
                     <div class="circle-outer" id="circle-outer">
                         <div class="circle-inner">
@@ -591,14 +596,17 @@ app.get('/', (req, res) => {
 
         function toggleBreathe() {
             const btn = document.getElementById('btn-breathe');
+            const audio = document.getElementById('breatheAudio');
             if (isBreathing) {
                 stopBreathe();
+                if (audio) { audio.pause(); audio.currentTime = 0; }
                 btn.innerText = 'Bắt đầu tập';
                 breatheMinutes++;
                 localStorage.setItem('breatheMinutes', breatheMinutes);
                 document.getElementById('stat-breathe').innerText = breatheMinutes;
             } else {
                 startBreathe();
+                if (audio) { audio.play().catch(e => console.log(e)); }
                 btn.innerText = 'Dừng tập (Để lưu phút)';
             }
             isBreathing = !isBreathing;
@@ -613,7 +621,7 @@ app.get('/', (req, res) => {
 
             function updatePhase() {
                 textEl.innerText = breathePhases[pIndex].text;
-                outerCircle.style.transform = \`scale(\${breathePhases[pIndex].scale})\`;
+                outerCircle.style.transform = `scale(${breathePhases[pIndex].scale})`;
                 timeLeft = breathePhases[pIndex].time;
                 timerEl.innerText = timeLeft;
             }
@@ -657,7 +665,7 @@ app.get('/', (req, res) => {
         const currentMindfulDay = Math.min(dayDiff + 1, 21); 
 
         function initMindfulChallengeData() {
-            document.getElementById('current-day-label').innerText = \`Ngày \${currentMindfulDay}\`;
+            document.getElementById('current-day-label').innerText = `Ngày ${currentMindfulDay}`;
             const taskIndex = (new Date().getDate() + currentMindfulDay) % mindfulTasks.length;
             document.getElementById('daily-task-mindful').innerText = mindfulTasks[taskIndex];
             renderMindfulTracker();
@@ -674,7 +682,7 @@ app.get('/', (req, res) => {
             const journal = document.getElementById('journal-entry').value;
             if (!currentEmoji) return alert("Chọn 1 cảm xúc hôm nay nhé!");
 
-            mindfulAppData[\`day_\${currentMindfulDay}\`] = { emoji: currentEmoji, journal, completed: true };
+            mindfulAppData[`day_${currentMindfulDay}`] = { emoji: currentEmoji, journal, completed: true };
             localStorage.setItem('mindfulAppData', JSON.stringify(mindfulAppData));
 
             const msgBox = document.getElementById('motivation-message');
@@ -693,9 +701,9 @@ app.get('/', (req, res) => {
             const board = document.getElementById('tracker-board');
             board.innerHTML = '';
             for (let i = 1; i <= 21; i++) {
-                const dayData = mindfulAppData[\`day_\${i}\`];
+                const dayData = mindfulAppData[`day_${i}`];
                 const isCompleted = dayData && dayData.completed;
-                board.innerHTML += \`<div class="tracker-day \${isCompleted ? 'completed' : ''}"><strong>N.\${i}</strong><span>\${isCompleted ? dayData.emoji : '⚪'}</span></div>\`;
+                board.innerHTML += `<div class="tracker-day ${isCompleted ? 'completed' : ''}"><strong>N.${i}</strong><span>${isCompleted ? dayData.emoji : '⚪'}</span></div>`;
             }
         }
 
@@ -704,7 +712,7 @@ app.get('/', (req, res) => {
             const percentage = Math.min((completedDays / 21) * 100, 100);
             
             document.getElementById('main-progress').style.width = percentage + '%';
-            document.getElementById('progress-text').innerText = \`\${completedDays}/21 ngày\`;
+            document.getElementById('progress-text').innerText = `${completedDays}/21 ngày`;
             document.getElementById('stat-days').innerText = completedDays;
         }
     </script>
