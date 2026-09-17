@@ -4,35 +4,11 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ==========================================
-// 1. SECURITY & MIDDLEWARE CONFIGURATION
-// ==========================================
-app.use(cors({
-    origin: '*', // Trong môi trường Production thực tế, thay '*' bằng domain Frontend cố định (VD: 'https://myapp.com')
-    methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
-app.use(express.json({ limit: '10kb' })); // Chống DDoS bằng cách giới hạn kích thước payload
-
-// Hàm Helper chống tấn công XSS
-const escapeHTML = (str) => {
-    if (!str) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-};
-
-// Async Handler wrapper để bắt gọn mọi Promise Rejection
-const asyncHandler = (fn) => (req, res, next) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-};
+app.use(cors({ origin: '*', methods: ['GET', 'POST'] }));
+app.use(express.json());
 
 // ==========================================
-// 2. IN-MEMORY DATABASE & DATASETS
+// 1. BACKEND: DATASETS & MEMORY DB
 // ==========================================
 const dailyChallenges = [
     "Liệu hôm nay bạn có dám mỉm cười và chào hỏi một người bạn chưa từng nói chuyện?",
@@ -56,30 +32,34 @@ const loadingAffirmations = [
 ];
 
 // ==========================================
-// 3. RESTFUL API ENDPOINTS (PROTECTED & VALIDATED)
+// 2. BACKEND API ENDPOINTS
 // ==========================================
+app.post('/api/chat', (req, res) => {
+    try {
+        const { message, userName } = req.body;
+        if (!message) return res.status(400).json({ success: false, error: 'Tin nhắn trống' });
 
-app.post('/api/chat', asyncHandler(async (req, res) => {
-    const { message, userName } = req.body;
-    
-    if (!message || typeof message !== 'string' || !message.trim()) {
-        return res.status(400).json({ success: false, error: 'Tin nhắn không hợp lệ' });
+        const msg = message.toLowerCase();
+        const user = userName || 'bạn';
+        let reply = `Chào ${user}! Tớ luôn ở đây lắng nghe bạn. Cứ thoải mái chia sẻ những suy nghĩ trong đầu lúc này nhé.`;
+
+        if (msg.includes('sợ') || msg.includes('lo') || msg.includes('ngại') || msg.includes('đông')) {
+            reply = `Tớ hiểu cảm giác lo âu này của ${user}. Não bộ chúng ta thường tự động bật chế độ đề phòng và phóng đại sự chú ý của đám đông. Thực tế là 90% mọi người xung quanh chỉ đang bận lo lắng về chính bộ dạng của họ thôi. Hãy thử hít thở sâu nhé!`;
+        } else if (msg.includes('quê') || msg.includes('xấu hổ') || msg.includes('sai') || msg.includes('vấp')) {
+            reply = `Ai cũng từng có những khoảnh khắc nói hớ hay vấp ngã. Sự cố đó có vẻ to tát với ${user} bây giờ, nhưng trong mắt người khác nó chỉ lướt qua như một cơn gió nhẹ và bị quên ngay sau vài giờ thôi. Đừng quá khắt khe với bản thân.`;
+        } else if (msg.includes('cô đơn') || msg.includes('không ai') || msg.includes('từ chối')) {
+            reply = `Bạn không một mình đâu ${user}. Cảm giác bị tách biệt là phản ứng tâm lý rất tự nhiên khi ta quá bận tâm đến việc phải hoàn hảo trong mắt người khác. Tớ vẫn ở đây với bạn mà!`;
+        } else if (msg.includes('đọc vị') || msg.includes('họ nghĩ') || msg.includes('suy nghĩ')) {
+            reply = `Đừng cố "đọc suy nghĩ" của người khác nhé ${user}! Đó là một bẫy tư duy phổ biến. Chúng ta không thể biết chắc họ nghĩ gì, nhưng chắc chắn họ không dành 24/7 để đánh giá bạn đâu.`;
+        } else if (msg.includes('thử thách') || msg.includes('dám')) {
+            reply = `Thử thách sinh ra là để giúp bản thân bước ra khỏi vùng an toàn. ${user} không cần làm nó một cách hoàn hảo, chỉ cần dám bắt đầu là bạn đã chiến thắng chính mình rồi!`;
+        }
+
+        setTimeout(() => res.json({ success: true, reply }), 300);
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Lỗi hệ thống' });
     }
-
-    const cleanMsg = escapeHTML(message.trim()).toLowerCase();
-    const cleanUser = escapeHTML(userName || 'bạn');
-    let reply = `Chào ${cleanUser}! Tớ luôn ở đây lắng nghe bạn. Cứ thoải mái chia sẻ những suy nghĩ trong đầu lúc này nhé.`;
-
-    if (cleanMsg.includes('sợ') || cleanMsg.includes('lo') || cleanMsg.includes('ngại') || cleanMsg.includes('đông')) {
-        reply = `Tớ hiểu cảm giác lo âu này của ${cleanUser}. Não bộ chúng ta thường tự động bật chế độ đề phòng và phóng đại sự chú ý của đám đông. Thực tế là 90% mọi người xung quanh chỉ đang bận lo lắng về chính bộ dạng của họ thôi. Hãy thử hít thở sâu nhé!`;
-    } else if (cleanMsg.includes('quê') || cleanMsg.includes('xấu hổ') || cleanMsg.includes('sai') || cleanMsg.includes('vấp')) {
-        reply = `Ai cũng từng có những khoảnh khắc nói hớ hay vấp ngã. Sự cố đó có vẻ to tát với ${cleanUser} bây giờ, nhưng trong mắt người khác nó chỉ lướt qua như một cơn gió nhẹ và bị quên ngay sau vài giờ thôi.`;
-    } else if (cleanMsg.includes('cô đơn') || cleanMsg.includes('không ai') || cleanMsg.includes('từ chối')) {
-        reply = `Bạn không một mình đâu ${cleanUser}. Cảm giác bị tách biệt là phản ứng tâm lý rất tự nhiên khi ta quá bận tâm đến việc phải hoàn hảo trong mắt người khác. Tớ vẫn ở đây với bạn mà!`;
-    }
-
-    res.json({ success: true, reply });
-}));
+});
 
 app.get('/api/challenge', (req, res) => {
     const random = dailyChallenges[Math.floor(Math.random() * dailyChallenges.length)];
@@ -90,48 +70,51 @@ app.get('/api/wall', (req, res) => {
     res.json({ success: true, posts: anonymousWallPosts });
 });
 
-app.post('/api/wall', asyncHandler(async (req, res) => {
-    const { text } = req.body;
-    if (!text || typeof text !== 'string' || !text.trim()) {
-        return res.status(400).json({ success: false, error: 'Nội dung không được để trống' });
+app.post('/api/wall', (req, res) => {
+    try {
+        const { text } = req.body;
+        if (!text || !text.trim()) return res.status(400).json({ success: false, error: 'Nội dung không được để trống' });
+        const newPost = { 
+            id: Date.now(), 
+            author: `Thành viên ẩn danh #${Math.floor(100 + Math.random() * 900)}`, 
+            text: text.trim(), 
+            time: 'Vừa xong' 
+        };
+        anonymousWallPosts.unshift(newPost);
+        res.json({ success: true, post: newPost });
+    } catch (err) { 
+        res.status(500).json({ success: false, error: 'Lỗi lưu bài viết' }); 
     }
+});
 
-    const cleanText = escapeHTML(text.trim());
-    const newPost = { 
-        id: Date.now(), 
-        author: `Thành viên ẩn danh #${Math.floor(100 + Math.random() * 900)}`, 
-        text: cleanText, 
-        time: 'Vừa xong' 
-    };
-
-    anonymousWallPosts.unshift(newPost);
-    res.status(201).json({ success: true, post: newPost });
-}));
-
-app.post('/api/predict-spotlight', asyncHandler(async (req, res) => {
-    const { event, perceivedPercent } = req.body;
-    const perceived = Math.min(100, Math.max(0, parseInt(perceivedPercent) || 50));
-    const predictedActual = Math.max(5, Math.round(perceived * 0.18 + Math.random() * 5));
-    
-    const explanation = `Theo thực nghiệm tâm lý xã hội, khi bạn nghĩ có ${perceived}% đám đông đang chú ý đến sự cố của bạn, mức độ thực tế họ ghi nhớ chỉ đạt khoảng ${predictedActual}%. Hầu hết mọi người chỉ tập trung vào vấn đề cá nhân của họ.`;
-    
-    const reframes = [
-        "1. Góc nhìn thực tế: Sự cố này chỉ kéo dài vài giây, người khác sẽ quên ngay khi chuyển sang hoạt động tiếp theo.",
-        "2. Tái định khung: Sai sót là minh chứng bạn đang dũng cảm hành động và bước ra khỏi vùng an toàn.",
-        "3. Sự đồng cảm: Mọi người xung quanh thường có xu hướng cảm thông hơn là khắt khe phán xét."
-    ];
-
-    res.json({ 
-        success: true, 
-        perceivedPercent: perceived, 
-        predictedPercent: predictedActual, 
-        explanation, 
-        reframes 
-    });
-}));
+app.post('/api/predict-spotlight', (req, res) => {
+    try {
+        const { event, perceivedPercent } = req.body;
+        const perceived = parseInt(perceivedPercent) || 50;
+        const predictedActual = Math.max(5, Math.round(perceived * 0.18 + Math.random() * 5));
+        
+        const explanation = `Theo thực nghiệm tâm lý xã hội, khi bạn nghĩ có ${perceived}% đám đông đang chú ý đến sự cố của bạn, mức độ thực tế họ ghi nhớ chỉ đạt khoảng ${predictedActual}%. Hầu hết mọi người chỉ tập trung vào vấn đề cá nhân của họ.`;
+        
+        const reframes = [
+            "1. Góc nhìn thực tế: Sự cố này chỉ kéo dài vài giây, người khác sẽ quên ngay khi chuyển sang hoạt động tiếp theo.",
+            "2. Tái định khung: Sai sót là minh chứng bạn đang dũng cảm hành động và bước ra khỏi vùng an toàn.",
+            "3. Sự đồng cảm: Mọi người xung quanh thường có xu hướng cảm thông hơn là khắt khe phán xét."
+        ];
+        
+        setTimeout(() => res.json({ 
+            success: true, 
+            perceivedPercent: perceived, 
+            predictedPercent: predictedActual, 
+            explanation, 
+            reframes 
+        }), 350);
+    } catch (err) { 
+        res.status(500).json({ success: false, error: 'Lỗi tính toán' }); 
+    }
+});
 
 // ==========================================
-// 4. FRONTEND SPA (WITH INTEGRATED WEB AUDIO API)
+// 3. FRONTEND SPA
 // ==========================================
 app.get('/', (req, res) => {
     const htmlContent = `
@@ -231,6 +214,18 @@ app.get('/', (req, res) => {
         .breathe-timer { font-size: 24px; }
         .btn-mindful { background: var(--mindful-green); color: white; border: none; padding: 12px; border-radius: 12px; cursor: pointer; font-size: 16px; margin-top: 20px; width: 100%; font-weight: 700; transition: 0.3s; }
         .btn-mindful:hover { background: #388E3C; }
+        
+        .challenge-box { background: #fff3e0; padding: 15px; border-left: 5px solid #ff9800; margin-bottom: 20px; border-radius: 4px; }
+        .journal-form textarea { width: 100%; height: 100px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; resize: none; margin-bottom: 15px; font-family: 'Nunito', sans-serif;}
+        .emoji-selector { display: flex; gap: 15px; margin-bottom: 15px; font-size: 30px; justify-content: center; }
+        .emoji { opacity: 0.4; transition: 0.2s; cursor: pointer; user-select: none; }
+        .emoji.selected, .emoji:hover { opacity: 1; transform: scale(1.2); }
+        .tracker-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-top: 20px; }
+        .tracker-day { background: #f0f0f0; border-radius: 5px; padding: 10px; text-align: center; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; transition: 0.2s; border: 2px solid transparent; }
+        .tracker-day:hover { border-color: #a7f3d0; }
+        .tracker-day.active-day { border-color: var(--primary) !important; font-weight: bold; }
+        .tracker-day.completed { background: #e8f5e9; border: 1px solid var(--mindful-green); }
+        .message-box { display: none; background: #e3f2fd; color: #1565c0; padding: 15px; border-radius: 5px; margin-top: 15px; text-align: center; font-style: italic; }
 
         #nameModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 100; }
         .modal-box { background: #fff; padding: 2.5rem 2rem; border-radius: 24px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
@@ -260,36 +255,54 @@ app.get('/', (req, res) => {
     <div class="container">
         <div class="user-bar">
             <div style="font-size:1.05rem;">Chào <strong id="displayName" style="color:var(--primary);">Bạn</strong>,</div>
-            <div class="streak-badge">🔥 <span id="streakCount">1</span> Ngày</div>
+            <div class="streak-badge">🔥 <span id="streakCount">0</span> Ngày Hoàn Thành</div>
         </div>
 
         <div class="nav-tabs">
             <button class="tab-btn active" onclick="switchTab(event, 'journal')">Sổ Tay</button>
             <button class="tab-btn" onclick="switchTab(event, 'ai-chat')">AI Tâm Lý</button>
             <button class="tab-btn" onclick="switchTab(event, 'wall')">Đồng Cảm</button>
+            <button class="tab-btn" onclick="switchTab(event, 'progress')">📊 Tiến Trình</button>
             <button class="tab-btn" onclick="switchTab(event, 'breathe')">🫁 Tập Thở</button>
+            <button class="tab-btn" onclick="switchTab(event, 'challenge21')">🎯 21 Ngày</button>
         </div>
-
+        
         <!-- TAB: SỔ TAY -->
         <div id="journal" class="tab-content active">
             <div class="notebook-card">
                 <div class="card-title">Phần 1: Nhìn nhận lại sự cố</div>
-                <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:5px;">Sự kiện khiến bạn lo lắng/xấu hổ là gì?</p>
+                <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:5px; position:relative; z-index:2;">Sự kiện khiến bạn lo lắng/xấu hổ là gì?</p>
                 <textarea id="eventInput" class="notebook-input" placeholder="Ví dụ: Lỡ nói vấp một từ khi phát biểu..." oninput="autoResize(this)"></textarea>
                 
+                <p style="font-size:0.9rem; color:var(--text-muted); margin:15px 0 5px; position:relative; z-index:2;">Bạn nghĩ họ đang đánh giá bạn thế nào?</p>
+                <textarea id="judgeInput" class="notebook-input" placeholder="Tớ nghĩ họ đang cười thầm và chê tớ kém cỏi..." oninput="autoResize(this)"></textarea>
+                
                 <div class="slider-container">
-                    <p style="font-size:0.9rem; font-weight:700;">Bạn nghĩ mức độ chú ý của họ là bao nhiêu %?</p>
+                    <p style="font-size:0.9rem; font-weight:700; color:var(--text);">Bạn nghĩ mức độ chú ý của họ là bao nhiêu %?</p>
                     <div class="slider-val" id="percentVal">50%</div>
                     <input type="range" id="percentSlider" min="0" max="100" value="50" oninput="document.getElementById('percentVal').innerText = this.value + '%'">
                 </div>
                 
-                <button class="btn" onclick="predictAttention()">Bật Kính Lúp Sự Thật 🔍</button>
+                <button class="btn" style="background:var(--text);" onclick="predictAttention()">Bật Kính Lúp Sự Thật 🔍</button>
                 <div id="aiPredictionResult" class="ai-result-box"></div>
             </div>
+
+            <div class="notebook-card">
+                <div class="card-title" style="color:var(--accent);">Phần 2: Bằng chứng thực tế</div>
+                <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:5px; position:relative; z-index:2;">Có bằng chứng rõ ràng nào cho thấy họ thực sự chú ý không?</p>
+                <textarea id="proofInput" class="notebook-input" placeholder="Hình như không ai nói gì, họ tiếp tục bấm điện thoại..." oninput="autoResize(this)"></textarea>
+            </div>
+            
+            <button class="btn" onclick="saveJournal()">Gấp Sổ Tay (Lưu Tiến Trình)</button>
         </div>
 
         <!-- TAB: AI CHAT -->
         <div id="ai-chat" class="tab-content">
+            <div class="chat-challenge-banner">
+                <div style="font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; opacity:0.8;">Thử thách dũng cảm hôm nay</div>
+                <div class="challenge-q" id="challengeText">Đang tải thử thách...</div>
+            </div>
+
             <div class="chat-wrapper">
                 <div class="chat-box" id="chatBox">
                     <div class="chat-msg bot">Xin chào! Tớ là AI đồng hành. Hôm nay bạn có điều gì trăn trở muốn tâm sự với tớ không?</div>
@@ -301,17 +314,39 @@ app.get('/', (req, res) => {
             </div>
         </div>
 
-        <!-- TAB: WALL -->
+        <!-- TAB: BỨC TƯỜNG ĐỒNG CẢM -->
         <div id="wall" class="tab-content">
             <div class="notebook-card">
                 <div class="card-title">Chia sẻ câu chuyện của bạn</div>
                 <textarea id="wallInput" class="notebook-input" placeholder="Viết một suy nghĩ hoặc sự cố nhỏ hôm nay (hoàn toàn ẩn danh)..." oninput="autoResize(this)"></textarea>
-                <button class="btn" onclick="postToWall()">Gửi Lên Bức Tường 💌</button>
+                <button class="btn" style="margin-top:10px;" onclick="postToWall()">Gửi Lên Bức Tường 💌</button>
             </div>
             <div id="wallPostsContainer"></div>
         </div>
 
-        <!-- TAB: TẬP THỞ (TÍCH HỢP SOUND ENGINE DỰ PHÒNG) -->
+        <!-- TAB: TIẾN TRÌNH -->
+        <div id="progress" class="tab-content">
+            <h2 style="color:var(--primary-dark); margin-bottom:15px;">Tiến trình của bạn</h2>
+            <div class="mindful-card">
+                <p>Hành trình 21 ngày thay đổi bản thân</p>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="main-progress"></div>
+                </div>
+                <p style="text-align: right; margin-top: 5px; font-weight: bold;" id="progress-text">0/21 ngày</p>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <h3 id="stat-days">0</h3>
+                    <p>Ngày hoàn thành</p>
+                </div>
+                <div class="stat-box">
+                    <h3 id="stat-breathe">0</h3>
+                    <p>Phút tập thở</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: TẬP THỜ -->
         <div id="breathe" class="tab-content">
             <h2 style="color:var(--primary-dark); margin-bottom:15px;">Tập thở Box Breathing</h2>
             <div class="mindful-card">
@@ -324,52 +359,218 @@ app.get('/', (req, res) => {
                     </div>
                 </div>
                 <button class="btn-mindful" id="btn-breathe" onclick="toggleBreathe()">Bắt đầu tập</button>
-                
-                <div style="margin-top: 20px; width: 100%; text-align: center;">
-                    <p style="font-size: 14px; margin-bottom: 10px; color: var(--text-muted);">🎵 Nhạc thiền tĩnh tâm (Tự động phát âm thanh 432Hz dự phòng)</p>
-                    <audio id="breatheAudio" src="https://actions.google.com/sounds/v1/ambiences/rain_heavy_loud.ogg" loop preload="auto" controls style="width: 100%; border-radius: 8px;"></audio>
-                </div>
             </div>
         </div>
+
+        <!-- TAB: THỬ THÁCH 21 NGÀY -->
+        <div id="challenge21" class="tab-content">
+            <h2 style="color:var(--primary-dark); margin-bottom:15px;">Mindful 21 Ngày</h2>
+            <div class="mindful-card">
+                <h3 style="margin-bottom:10px;">Nhiệm vụ (<span id="current-day-label">Ngày 1</span>)</h3>
+                <div class="challenge-box">
+                    <strong style="font-size: 16px;" id="daily-task-mindful">Đang tải thử thách...</strong>
+                </div>
+
+                <div class="journal-form">
+                    <p style="margin-bottom:10px;"><strong>Cảm giác của bạn hôm nay?</strong></p>
+                    <div class="emoji-selector" id="emoji-list">
+                        <span class="emoji" onclick="selectEmoji(this, '😢')">😢</span>
+                        <span class="emoji" onclick="selectEmoji(this, '😕')">😕</span>
+                        <span class="emoji" onclick="selectEmoji(this, '😐')">😐</span>
+                        <span class="emoji" onclick="selectEmoji(this, '🙂')">🙂</span>
+                        <span class="emoji" onclick="selectEmoji(this, '😄')">😄</span>
+                    </div>
+                    <textarea id="journal-entry" placeholder="Ghi nhận lại hôm nay bạn đã thực hiện ra sao..."></textarea>
+                    <button class="btn-mindful" onclick="saveDailyProgress()">Lưu ghi nhận cho ngày này</button>
+                </div>
+                <div id="motivation-message" class="message-box"></div>
+            </div>
+
+            <div class="mindful-card">
+                <h3>Bảng theo dõi (Bấm chọn ngày để xem/ghi nhận)</h3>
+                <div class="tracker-grid" id="tracker-board"></div>
+            </div>
+        </div>
+
     </div>
 
     <script>
-        let audioCtx, osc1, osc2, gainNode;
+        // ==========================================
+        // STATE MANAGEMENT & GLOBAL LOGIC
+        // ==========================================
+        const mindfulTasks = [
+            "Dành 15 phút đọc sách hoặc nghe podcast tích cực.",
+            "Đi dạo 20 phút mà không mang theo điện thoại.",
+            "Uống đủ 2 lít nước và ăn nhiều rau xanh hôm nay.",
+            "Viết ra 3 điều bạn cảm thấy biết ơn lúc này.",
+            "Dọn dẹp lại góc làm việc/phòng ngủ cho gọn gàng.",
+            "Nhắn tin hỏi thăm một người bạn/người thân đã lâu không gặp.",
+            "Thực hiện bài tập thở Box Breathing 5 phút."
+        ];
 
-        // Web Audio API Synth Engine (432Hz Sound Generation)
-        function startSyntheticMeditationSound() {
-            try {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                osc1 = audioCtx.createOscillator();
-                osc2 = audioCtx.createOscillator();
-                gainNode = audioCtx.createGain();
+        let mindfulAppData = JSON.parse(localStorage.getItem('mindfulAppData')) || {};
+        let currentEmoji = '';
+        let activeChallengeDay = 1;
 
-                osc1.type = 'sine';
-                osc1.frequency.setValueAtTime(108, audioCtx.currentTime); 
-                osc2.type = 'sine';
-                osc2.frequency.setValueAtTime(216, audioCtx.currentTime);
-
-                gainNode.gain.setValueAtTime(0.01, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.12, audioCtx.currentTime + 3);
-
-                osc1.connect(gainNode);
-                osc2.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-
-                osc1.start();
-                osc2.start();
-            } catch(e) { console.warn('Web Audio Context bị chặn'); }
+        function autoResize(textarea) {
+            textarea.style.height = '64px';
+            textarea.style.height = (textarea.scrollHeight) + 'px';
         }
 
-        function stopSyntheticMeditationSound() {
-            if (gainNode && audioCtx) {
-                gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1);
-                setTimeout(() => { if (audioCtx && audioCtx.state !== 'closed') audioCtx.close(); }, 1000);
+        window.addEventListener('DOMContentLoaded', () => {
+            const affirmations = ${JSON.stringify(loadingAffirmations)};
+            document.getElementById('splashMsg').innerText = affirmations[Math.floor(Math.random() * affirmations.length)];
+            setTimeout(() => {
+                const splash = document.getElementById('splashLoader');
+                splash.style.opacity = '0';
+                setTimeout(() => splash.style.visibility = 'hidden', 600);
+            }, 1000);
+            
+            checkUser();
+            initMindfulChallengeData();
+        });
+
+        function checkUser() {
+            const name = localStorage.getItem("spotlight_username");
+            if (name) {
+                document.getElementById("nameModal").style.display = "none";
+                document.getElementById("displayName").innerText = name;
+            } else {
+                document.getElementById("nameModal").style.display = "flex";
+            }
+            updateMindfulProgress();
+        }
+
+        function saveName() {
+            const name = document.getElementById("usernameInput").value.trim();
+            if (name) {
+                localStorage.setItem("spotlight_username", name);
+                checkUser();
+            } else {
+                alert("Bạn nhập tên hoặc biệt danh nhé!");
             }
         }
 
+        function switchTab(evt, tabId) {
+            document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+            document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
+            document.getElementById(tabId).classList.add("active");
+            evt.currentTarget.classList.add("active");
+            
+            if (tabId === "ai-chat" && document.getElementById("challengeText").innerText.includes("Đang tải")) {
+                loadChallenge();
+            } else if (tabId === "wall") {
+                loadWallPosts();
+            }
+        }
+
+        // ==========================================
+        // SPOTLIGHT API CALLS
+        // ==========================================
+        async function predictAttention() {
+            const event = document.getElementById("eventInput").value.trim();
+            const perceived = document.getElementById("percentSlider").value;
+            const resDiv = document.getElementById("aiPredictionResult");
+
+            if (!event) return alert("Hãy ghi lại sự cố ở Phần 1 trước nhé.");
+
+            resDiv.style.display = "block";
+            resDiv.innerHTML = "⏳ Kính lúp sự thật đang phân tích...";
+
+            try {
+                const response = await fetch("/api/predict-spotlight", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ event, perceivedPercent: perceived })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    let reframesHtml = data.reframes.map(r => "<div class='reframe-item'>" + r + "</div>").join("");
+                    resDiv.innerHTML = "<strong>🔍 Kết quả phân tích:</strong><br>Sự chú ý THỰC TẾ từ người khác chỉ khoảng <strong style='color:#ef4444; font-size:1.2rem;'>" + data.predictedPercent + "%</strong> (thay vì " + data.perceivedPercent + "%).<br><br>" + data.explanation + "<br><br><strong>Gợi ý tái định khung:</strong>" + reframesHtml;
+                }
+            } catch (err) {
+                resDiv.innerHTML = "❌ Không thể kết nối hệ thống phân tích.";
+            }
+        }
+
+        function saveJournal() {
+            alert("Trang sổ hôm nay đã lưu lại thành công!");
+            ["eventInput", "judgeInput", "proofInput"].forEach(id => document.getElementById(id).value = "");
+            document.getElementById("aiPredictionResult").style.display = "none";
+            document.querySelectorAll('textarea.notebook-input').forEach(t => t.style.height = '64px');
+        }
+
+        async function loadChallenge() {
+            try {
+                const res = await fetch("/api/challenge");
+                const data = await res.json();
+                if(data.success) document.getElementById("challengeText").innerText = data.challenge;
+            } catch(e) {
+                document.getElementById("challengeText").innerText = "Bạn có dám đối mặt với nỗi sợ hôm nay?";
+            }
+        }
+
+        async function sendChat() {
+            const input = document.getElementById("chatInput");
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            const chatBox = document.getElementById("chatBox");
+            chatBox.innerHTML += "<div class='chat-msg user'>" + msg + "</div>";
+            input.value = "";
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            const userName = localStorage.getItem("spotlight_username") || "Bạn";
+            try {
+                const res = await fetch("/api/chat", {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: msg, userName })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    chatBox.innerHTML += "<div class='chat-msg bot'>" + data.reply + "</div>";
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+            } catch (err) {
+                chatBox.innerHTML += "<div class='chat-msg bot'>Tớ gặp lỗi kết nối!</div>";
+            }
+        }
+
+        async function loadWallPosts() {
+            const container = document.getElementById("wallPostsContainer");
+            try {
+                const res = await fetch("/api/wall");
+                const data = await res.json();
+                if (data.success) {
+                    container.innerHTML = data.posts.map(p => 
+                        "<div class='wall-post-card'><div class='wall-author'><span>" + p.author + "</span><span style='color:var(--text-muted); font-weight:normal;'>" + p.time + "</span></div><div class='wall-text'>" + p.text + "</div></div>"
+                    ).join("");
+                }
+            } catch (e) { container.innerHTML = "<p>Lỗi tải dữ liệu.</p>"; }
+        }
+
+        async function postToWall() {
+            const input = document.getElementById("wallInput");
+            const text = input.value.trim();
+            if (!text) return alert("Viết nội dung trước nhé!");
+
+            try {
+                const res = await fetch("/api/wall", {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text })
+                });
+                const data = await res.json();
+                if (data.success) { input.value = ""; input.style.height = "64px"; loadWallPosts(); }
+            } catch (e) { alert("Lỗi khi gửi."); }
+        }
+
+        // ==========================================
+        // MINDFULNESS & 21-DAY CHALLENGE FIXES
+        // ==========================================
         let timerInterval, isBreathing = false;
         let breatheMinutes = parseInt(localStorage.getItem('breatheMinutes')) || 0;
+        document.getElementById('stat-breathe').innerText = breatheMinutes;
 
         const breathePhases = [
             { text: 'Hít vào', scale: '1.5', time: 4 },
@@ -380,26 +581,15 @@ app.get('/', (req, res) => {
 
         function toggleBreathe() {
             const btn = document.getElementById('btn-breathe');
-            const audio = document.getElementById('breatheAudio');
-
             if (isBreathing) {
                 stopBreathe();
                 btn.innerText = 'Bắt đầu tập';
-                if (audio) { audio.pause(); audio.currentTime = 0; }
-                stopSyntheticMeditationSound();
                 breatheMinutes++;
                 localStorage.setItem('breatheMinutes', breatheMinutes);
+                document.getElementById('stat-breathe').innerText = breatheMinutes;
             } else {
                 startBreathe();
                 btn.innerText = 'Dừng tập (Để lưu phút)';
-                if (audio) {
-                    audio.play().catch(err => {
-                        console.warn('Phát hiện lỗi CORS/Autoplay MP3, chuyển sang Web Audio API:', err);
-                        startSyntheticMeditationSound();
-                    });
-                } else {
-                    startSyntheticMeditationSound();
-                }
             }
             isBreathing = !isBreathing;
         }
@@ -413,7 +603,7 @@ app.get('/', (req, res) => {
 
             function updatePhase() {
                 textEl.innerText = breathePhases[pIndex].text;
-                outerCircle.style.transform = 'scale(' + breathePhases[pIndex].scale + ')';
+                outerCircle.style.transform = `scale(\${breathePhases[pIndex].scale})`;
                 timeLeft = breathePhases[pIndex].time;
                 timerEl.innerText = timeLeft;
             }
@@ -421,11 +611,10 @@ app.get('/', (req, res) => {
 
             timerInterval = setInterval(() => {
                 timeLeft--;
-                if (timeLeft <= 0) {
+                if (timeLeft > 0) timerEl.innerText = timeLeft;
+                else {
                     pIndex = (pIndex + 1) % breathePhases.length;
                     updatePhase();
-                } else {
-                    timerEl.innerText = timeLeft;
                 }
             }, 1000);
         }
@@ -437,121 +626,83 @@ app.get('/', (req, res) => {
             document.getElementById('breathe-timer').innerText = '4';
         }
 
-        function autoResize(textarea) {
-            textarea.style.height = '64px';
-            textarea.style.height = (textarea.scrollHeight) + 'px';
+        function initMindfulChallengeData() {
+            selectChallengeDay(1);
         }
 
-        function switchTab(evt, tabId) {
-            document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
-            document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
-            document.getElementById(tabId).classList.add("active");
-            evt.currentTarget.classList.add("active");
-            if (tabId === "wall") loadWallPosts();
-        }
+        function selectChallengeDay(dayNum) {
+            activeChallengeDay = dayNum;
+            document.getElementById('current-day-label').innerText = `Ngày ${activeChallengeDay}`;
+            
+            const taskIndex = (activeChallengeDay - 1) % mindfulTasks.length;
+            document.getElementById('daily-task-mindful').innerText = mindfulTasks[taskIndex];
 
-        async function predictAttention() {
-            const event = document.getElementById("eventInput").value.trim();
-            const perceived = document.getElementById("percentSlider").value;
-            const resDiv = document.getElementById("aiPredictionResult");
-
-            if (!event) return alert("Hãy ghi lại sự cố trước nhé.");
-            resDiv.style.display = "block";
-            resDiv.innerHTML = "⏳ Kính lúp sự thật đang phân tích...";
-
-            try {
-                const response = await fetch("/api/predict-spotlight", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ event, perceivedPercent: perceived })
+            const dayData = mindfulAppData[`day_${activeChallengeDay}`] || {};
+            document.getElementById('journal-entry').value = dayData.journal || '';
+            
+            document.querySelectorAll('.emoji').forEach(el => el.classList.remove('selected'));
+            currentEmoji = dayData.emoji || '';
+            if (currentEmoji) {
+                document.querySelectorAll('.emoji').forEach(el => {
+                    if (el.innerText.trim() === currentEmoji) el.classList.add('selected');
                 });
-                const data = await response.json();
-                if (data.success) {
-                    let reframesHtml = data.reframes.map(r => "<div class='reframe-item'>" + r + "</div>").join("");
-                    resDiv.innerHTML = "<strong>🔍 Kết quả phân tích:</strong><br>Sự chú ý THỰC TẾ: <strong style='color:#ef4444;'>" + data.predictedPercent + "%</strong> (thay vì " + data.perceivedPercent + "%).<br><br>" + data.explanation + "<br><br>" + reframesHtml;
-                }
-            } catch (err) { resDiv.innerHTML = "❌ Không thể kết nối server."; }
+            }
+
+            renderMindfulTracker();
         }
 
-        async function sendChat() {
-            const input = document.getElementById("chatInput");
-            const msg = input.value.trim();
-            if (!msg) return;
-
-            const chatBox = document.getElementById("chatBox");
-            chatBox.innerHTML += "<div class='chat-msg user'>" + msg + "</div>";
-            input.value = "";
-            chatBox.scrollTop = chatBox.scrollHeight;
-
-            try {
-                const res = await fetch("/api/chat", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ message: msg, userName: localStorage.getItem("spotlight_username") || "Bạn" })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    chatBox.innerHTML += "<div class='chat-msg bot'>" + data.reply + "</div>";
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                }
-            } catch (err) { chatBox.innerHTML += "<div class='chat-msg bot'>Lỗi kết nối!</div>"; }
+        function selectEmoji(element, emoji) {
+            document.querySelectorAll('.emoji').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            currentEmoji = emoji;
         }
 
-        async function loadWallPosts() {
-            const container = document.getElementById("wallPostsContainer");
-            try {
-                const res = await fetch("/api/wall");
-                const data = await res.json();
-                if (data.success) {
-                    container.innerHTML = data.posts.map(p => 
-                        "<div class='wall-post-card'><div class='wall-author'><span>" + p.author + "</span><span>" + p.time + "</span></div><div class='wall-text'>" + p.text + "</div></div>"
-                    ).join("");
-                }
-            } catch (e) { container.innerHTML = "<p>Lỗi tải dữ liệu.</p>"; }
+        function saveDailyProgress() {
+            const journal = document.getElementById('journal-entry').value;
+            if (!currentEmoji) return alert("Chọn 1 cảm xúc cho ngày hôm nay nhé!");
+
+            mindfulAppData[`day_${activeChallengeDay}`] = { 
+                emoji: currentEmoji, 
+                journal, 
+                completed: true,
+                updatedAt: new Date().toISOString()
+            };
+            localStorage.setItem('mindfulAppData', JSON.stringify(mindfulAppData));
+
+            const msgBox = document.getElementById('motivation-message');
+            msgBox.innerText = `Tuyệt vời! Đã ghi nhận tiến trình cho Ngày ${activeChallengeDay}.`;
+            msgBox.style.display = 'block';
+
+            renderMindfulTracker();
+            updateMindfulProgress();
         }
 
-        async function postToWall() {
-            const input = document.getElementById("wallInput");
-            const text = input.value.trim();
-            if (!text) return alert("Nội dung không được để trống!");
-
-            try {
-                const res = await fetch("/api/wall", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ text })
-                });
-                const data = await res.json();
-                if (data.success) { input.value = ""; loadWallPosts(); }
-            } catch (e) { alert("Lỗi khi gửi."); }
-        }
-
-        function checkUser() {
-            const name = localStorage.getItem("spotlight_username");
-            if (name) {
-                document.getElementById("nameModal").style.display = "none";
-                document.getElementById("displayName").innerText = name;
+        function renderMindfulTracker() {
+            const board = document.getElementById('tracker-board');
+            board.innerHTML = '';
+            for (let i = 1; i <= 21; i++) {
+                const dayData = mindfulAppData[`day_${i}`];
+                const isCompleted = dayData && dayData.completed;
+                const isActive = i === activeChallengeDay;
+                
+                board.innerHTML += `
+                    <div class="tracker-day ${isCompleted ? 'completed' : ''} ${isActive ? 'active-day' : ''}" onclick="selectChallengeDay(${i})">
+                        <strong>N.${i}</strong>
+                        <span>${isCompleted ? dayData.emoji : '⚪'}</span>
+                    </div>
+                `;
             }
         }
 
-        function saveName() {
-            const name = document.getElementById("usernameInput").value.trim();
-            if (name) {
-                localStorage.setItem("spotlight_username", name);
-                checkUser();
-            }
+        function updateMindfulProgress() {
+            const completedDays = Object.keys(mindfulAppData).filter(k => mindfulAppData[k] && mindfulAppData[k].completed).length;
+            const percentage = Math.min((completedDays / 21) * 100, 100);
+            
+            document.getElementById('main-progress').style.width = percentage + '%';
+            document.getElementById('progress-text').innerText = `${completedDays}/21 ngày`;
+            document.getElementById('stat-days').innerText = completedDays;
+            document.getElementById('streakCount').innerText = completedDays;
         }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            const affirmations = ${JSON.stringify(loadingAffirmations)};
-            document.getElementById('splashMsg').innerText = affirmations[Math.floor(Math.random() * affirmations.length)];
-            setTimeout(() => {
-                const splash = document.getElementById('splashLoader');
-                splash.style.opacity = '0';
-                setTimeout(() => splash.style.visibility = 'hidden', 600);
-            }, 1000);
-            checkUser();
-        });
     </script>
 </body>
 </html>
@@ -560,16 +711,8 @@ app.get('/', (req, res) => {
 });
 
 // ==========================================
-// 5. GLOBAL CENTRALIZED ERROR HANDLER
+// 4. SERVER INIT
 // ==========================================
-app.use((err, req, res, next) => {
-    console.error('❌ Server Internal Error:', err.stack);
-    res.status(500).json({ 
-        success: false, 
-        error: 'Hệ thống đang gặp sự cố nhỏ. Vui lòng thử lại sau!' 
-    });
-});
-
-app.listen(PORT, () => {
-    console.log(`🚀 System Online: Server running securely at http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 System running on port ${PORT}`);
 });
