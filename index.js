@@ -8,7 +8,7 @@ app.use(cors({ origin: '*', methods: ['GET', 'POST'] }));
 app.use(express.json());
 
 // ==========================================
-// 1. BACKEND: DATASETS & MEMORY DB
+// 1. BACKEND: IN-MEMORY DATABASE & DATASET
 // ==========================================
 const dailyChallenges = [
     "Liệu hôm nay bạn có dám mỉm cười và chào hỏi một người bạn chưa từng nói chuyện?",
@@ -52,10 +52,10 @@ app.post('/api/chat', (req, res) => {
         } else if (msg.includes('đọc vị') || msg.includes('họ nghĩ') || msg.includes('suy nghĩ')) {
             reply = `Đừng cố "đọc suy nghĩ" của người khác nhé ${user}! Đó là một bẫy tư duy phổ biến. Chúng ta không thể biết chắc họ nghĩ gì, nhưng chắc chắn họ không dành 24/7 để đánh giá bạn đâu.`;
         } else if (msg.includes('thử thách') || msg.includes('dám')) {
-            reply = `Thử thách sinh ra là để giúp bản thân bước ra khỏi vùng an toàn. ${user} không cần làm nó một cách hoàn hảo, chỉ cần dám bắt đầu là bạn đã chiến thắng chính mình rồi!`;
+            reply = `Thử thách sinh ra là để chúng bản thân bước ra khỏi vùng an toàn. ${user} không cần làm nó một cách hoàn hảo, chỉ cần dám bắt đầu là bạn đã chiến thắng chính mình rồi!`;
         }
 
-        setTimeout(() => res.json({ success: true, reply }), 300);
+        setTimeout(() => res.json({ success: true, reply }), 350);
     } catch (err) {
         res.status(500).json({ success: false, error: 'Lỗi hệ thống' });
     }
@@ -107,14 +107,14 @@ app.post('/api/predict-spotlight', (req, res) => {
             predictedPercent: predictedActual, 
             explanation, 
             reframes 
-        }), 350);
+        }), 400);
     } catch (err) { 
         res.status(500).json({ success: false, error: 'Lỗi tính toán' }); 
     }
 });
 
 // ==========================================
-// 3. FRONTEND SPA
+// 3. FRONTEND SPA (HỢP NHẤT SPOTLIGHT CHAT & MINDFUL APP)
 // ==========================================
 app.get('/', (req, res) => {
     const htmlContent = `
@@ -149,6 +149,7 @@ app.get('/', (req, res) => {
             background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h100v100H0z' fill='%23f9f8f6'/%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M0 0h100v100H0V0zm2 2h96v96H2V2z' fill='%23f1f0ee'/%3E%3C/svg%3E"); 
         }
         
+        /* Loader & Splash */
         #splashLoader { position: fixed; top:0; left:0; width:100vw; height:100vh; background: #faf9f6; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.6s ease, visibility 0.6s; }
         .aura-circle { width: 90px; height: 90px; border-radius: 50%; border: 4px solid var(--primary-light); border-top-color: var(--primary); animation: spin 1s linear infinite; margin-bottom: 1.5rem; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -159,9 +160,11 @@ app.get('/', (req, res) => {
         .slogan { font-size: 0.95rem; color: var(--text-muted); margin-top: 6px; font-style: italic; font-family: 'Lora', serif; }
         
         .container { max-width: 700px; margin: 1.5rem auto; padding: 0 1rem; }
+        
         .user-bar { background: #fff; padding: 1rem 1.2rem; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
         .streak-badge { background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; }
         
+        /* Tabs (Gộp tính năng) */
         .nav-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.5rem; justify-content: center; }
         .tab-btn { background: #fff; border: 1px solid #e5e7eb; padding: 0.65rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700; cursor: pointer; color: var(--text-muted); transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(91, 33, 182, 0.2); }
@@ -169,6 +172,7 @@ app.get('/', (req, res) => {
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* Sổ tay Phản tư */
         .notebook-card { background: var(--paper); border-radius: 8px; padding: 2rem 2rem 2rem 3rem; margin-bottom: 1.5rem; box-shadow: 2px 4px 15px rgba(0,0,0,0.05); position: relative; background-image: repeating-linear-gradient(transparent, transparent 31px, var(--line-color) 31px, var(--line-color) 32px); background-attachment: local; background-position: 0 2.5rem; }
         .notebook-card::before { content: ''; position: absolute; top: 0; bottom: 0; left: 2rem; width: 2px; background: var(--margin-line); }
         .card-title { font-size: 1.1rem; font-weight: 700; color: var(--primary); margin-bottom: 1rem; display: inline-block; background: #fff; padding: 0 5px; position: relative; z-index: 2; }
@@ -185,6 +189,7 @@ app.get('/', (req, res) => {
         .ai-result-box { display: none; margin-top: 1rem; background: var(--primary-light); border-left: 4px solid var(--primary); padding: 1.2rem; border-radius: 0 8px 8px 0; font-size: 0.95rem; color: var(--primary-dark); line-height: 1.6; position: relative; z-index: 2; font-family: 'Lora', serif; }
         .reframe-item { background: #fff; padding: 0.6rem 0.8rem; border-radius: 6px; margin-top: 6px; font-size: 0.9rem; color: var(--text); }
 
+        /* AI Chatbot & Wall */
         .chat-challenge-banner { background: linear-gradient(135deg, var(--primary), #8b5cf6); border-radius: 16px; padding: 1.5rem; color: #fff; margin-bottom: 1.5rem; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3); }
         .challenge-q { font-size: 1.1rem; font-weight: 700; font-family: 'Lora', serif; font-style: italic; margin-top: 0.5rem; line-height: 1.5; }
         .chat-wrapper { background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #f3f4f6; }
@@ -200,6 +205,7 @@ app.get('/', (req, res) => {
         .wall-author { font-size: 0.85rem; font-weight: 700; color: var(--primary); display: flex; justify-content: space-between; }
         .wall-text { font-size: 0.95rem; margin-top: 6px; font-family: 'Lora', serif; color: var(--text); line-height: 1.5; }
 
+        /* MINDFUL APP CSS STYLES */
         .mindful-card { background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .progress-bar-container { background: #e0e0e0; border-radius: 10px; height: 20px; width: 100%; overflow: hidden; margin-top: 10px; }
         .progress-bar { background: var(--mindful-green); height: 100%; width: 0%; transition: width 0.5s ease; }
@@ -207,6 +213,7 @@ app.get('/', (req, res) => {
         .stat-box { text-align: center; padding: 20px; background: #e8f5e9; border-radius: 10px; }
         .stat-box h3 { font-size: 30px; color: #388E3C; }
         
+        /* Tập Thở CSS */
         .breathe-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 350px; }
         .circle-outer { width: 220px; height: 220px; border-radius: 50%; background: rgba(76, 175, 80, 0.2); display: flex; align-items: center; justify-content: center; transition: all 1s linear; }
         .circle-inner { width: 90px; height: 90px; border-radius: 50%; background: var(--mindful-green); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: bold; text-align: center; box-shadow: 0 0 20px rgba(76, 175, 80, 0.5); }
@@ -215,18 +222,18 @@ app.get('/', (req, res) => {
         .btn-mindful { background: var(--mindful-green); color: white; border: none; padding: 12px; border-radius: 12px; cursor: pointer; font-size: 16px; margin-top: 20px; width: 100%; font-weight: 700; transition: 0.3s; }
         .btn-mindful:hover { background: #388E3C; }
         
+        /* Thử thách 21 Ngày CSS */
         .challenge-box { background: #fff3e0; padding: 15px; border-left: 5px solid #ff9800; margin-bottom: 20px; border-radius: 4px; }
         .journal-form textarea { width: 100%; height: 100px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; resize: none; margin-bottom: 15px; font-family: 'Nunito', sans-serif;}
-        .emoji-selector { display: flex; gap: 15px; margin-bottom: 15px; font-size: 30px; justify-content: center; }
-        .emoji { opacity: 0.4; transition: 0.2s; cursor: pointer; user-select: none; }
+        .emoji-selector { display: flex; gap: 15px; margin-bottom: 15px; font-size: 30px; justify-content: center; cursor: pointer; }
+        .emoji { opacity: 0.4; transition: 0.2s; }
         .emoji.selected, .emoji:hover { opacity: 1; transform: scale(1.2); }
         .tracker-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-top: 20px; }
-        .tracker-day { background: #f0f0f0; border-radius: 5px; padding: 10px; text-align: center; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; transition: 0.2s; border: 2px solid transparent; }
-        .tracker-day:hover { border-color: #a7f3d0; }
-        .tracker-day.active-day { border-color: var(--primary) !important; font-weight: bold; }
+        .tracker-day { background: #f0f0f0; border-radius: 5px; padding: 10px; text-align: center; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
         .tracker-day.completed { background: #e8f5e9; border: 1px solid var(--mindful-green); }
         .message-box { display: none; background: #e3f2fd; color: #1565c0; padding: 15px; border-radius: 5px; margin-top: 15px; text-align: center; font-style: italic; }
 
+        /* Modal Đăng nhập */
         #nameModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 100; }
         .modal-box { background: #fff; padding: 2.5rem 2rem; border-radius: 24px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         .modal-box input { width: 100%; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; margin: 1.5rem 0; outline: none; text-align: center; }
@@ -255,9 +262,10 @@ app.get('/', (req, res) => {
     <div class="container">
         <div class="user-bar">
             <div style="font-size:1.05rem;">Chào <strong id="displayName" style="color:var(--primary);">Bạn</strong>,</div>
-            <div class="streak-badge">🔥 <span id="streakCount">0</span> Ngày Hoàn Thành</div>
+            <div class="streak-badge">🔥 <span id="streakCount">1</span> Ngày</div>
         </div>
 
+        <!-- HỢP NHẤT NAVIGATION TABS -->
         <div class="nav-tabs">
             <button class="tab-btn active" onclick="switchTab(event, 'journal')">Sổ Tay</button>
             <button class="tab-btn" onclick="switchTab(event, 'ai-chat')">AI Tâm Lý</button>
@@ -267,7 +275,7 @@ app.get('/', (req, res) => {
             <button class="tab-btn" onclick="switchTab(event, 'challenge21')">🎯 21 Ngày</button>
         </div>
         
-        <!-- TAB: SỔ TAY -->
+        <!-- TAB: SỔ TAY PHẢN TƯ -->
         <div id="journal" class="tab-content active">
             <div class="notebook-card">
                 <div class="card-title">Phần 1: Nhìn nhận lại sự cố</div>
@@ -324,7 +332,7 @@ app.get('/', (req, res) => {
             <div id="wallPostsContainer"></div>
         </div>
 
-        <!-- TAB: TIẾN TRÌNH -->
+        <!-- TAB MỚI (Từ Mindful App): TIẾN TRÌNH -->
         <div id="progress" class="tab-content">
             <h2 style="color:var(--primary-dark); margin-bottom:15px;">Tiến trình của bạn</h2>
             <div class="mindful-card">
@@ -346,7 +354,7 @@ app.get('/', (req, res) => {
             </div>
         </div>
 
-        <!-- TAB: TẬP THỜ -->
+        <!-- TAB MỚI (Từ Mindful App): TẬP THỞ -->
         <div id="breathe" class="tab-content">
             <h2 style="color:var(--primary-dark); margin-bottom:15px;">Tập thở Box Breathing</h2>
             <div class="mindful-card">
@@ -359,10 +367,15 @@ app.get('/', (req, res) => {
                     </div>
                 </div>
                 <button class="btn-mindful" id="btn-breathe" onclick="toggleBreathe()">Bắt đầu tập</button>
+                
+                <div style="margin-top: 20px; width: 100%; text-align: center;">
+                    <p style="font-size: 14px; margin-bottom: 10px; color: var(--text-light);">* Nhạc thiền tĩnh tâm</p>
+                    <iframe width="100%" height="80" src="https://www.youtube.com/embed/fuXfT4Rv_WM" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
             </div>
         </div>
 
-        <!-- TAB: THỬ THÁCH 21 NGÀY -->
+        <!-- TAB MỚI (Từ Mindful App): THỬ THÁCH 21 NGÀY -->
         <div id="challenge21" class="tab-content">
             <h2 style="color:var(--primary-dark); margin-bottom:15px;">Mindful 21 Ngày</h2>
             <div class="mindful-card">
@@ -374,20 +387,20 @@ app.get('/', (req, res) => {
                 <div class="journal-form">
                     <p style="margin-bottom:10px;"><strong>Cảm giác của bạn hôm nay?</strong></p>
                     <div class="emoji-selector" id="emoji-list">
-                        <span class="emoji" onclick="selectEmoji(this, '😢')">😢</span>
-                        <span class="emoji" onclick="selectEmoji(this, '😕')">😕</span>
-                        <span class="emoji" onclick="selectEmoji(this, '😐')">😐</span>
-                        <span class="emoji" onclick="selectEmoji(this, '🙂')">🙂</span>
-                        <span class="emoji" onclick="selectEmoji(this, '😄')">😄</span>
+                        <span class="emoji" onclick="selectEmoji('😢')">😢</span>
+                        <span class="emoji" onclick="selectEmoji('😕')">😕</span>
+                        <span class="emoji" onclick="selectEmoji('😐')">😐</span>
+                        <span class="emoji" onclick="selectEmoji('🙂')">🙂</span>
+                        <span class="emoji" onclick="selectEmoji('😄')">😄</span>
                     </div>
                     <textarea id="journal-entry" placeholder="Ghi nhận lại hôm nay bạn đã thực hiện ra sao..."></textarea>
-                    <button class="btn-mindful" onclick="saveDailyProgress()">Lưu ghi nhận cho ngày này</button>
+                    <button class="btn-mindful" onclick="saveDailyProgress()">Lưu ghi nhận</button>
                 </div>
                 <div id="motivation-message" class="message-box"></div>
             </div>
 
             <div class="mindful-card">
-                <h3>Bảng theo dõi (Bấm chọn ngày để xem/ghi nhận)</h3>
+                <h3>Bảng theo dõi</h3>
                 <div class="tracker-grid" id="tracker-board"></div>
             </div>
         </div>
@@ -396,22 +409,8 @@ app.get('/', (req, res) => {
 
     <script>
         // ==========================================
-        // STATE MANAGEMENT & GLOBAL LOGIC
+        // KHỞI TẠO HỆ THỐNG VÀ TIỆN ÍCH CHUNG
         // ==========================================
-        const mindfulTasks = [
-            "Dành 15 phút đọc sách hoặc nghe podcast tích cực.",
-            "Đi dạo 20 phút mà không mang theo điện thoại.",
-            "Uống đủ 2 lít nước và ăn nhiều rau xanh hôm nay.",
-            "Viết ra 3 điều bạn cảm thấy biết ơn lúc này.",
-            "Dọn dẹp lại góc làm việc/phòng ngủ cho gọn gàng.",
-            "Nhắn tin hỏi thăm một người bạn/người thân đã lâu không gặp.",
-            "Thực hiện bài tập thở Box Breathing 5 phút."
-        ];
-
-        let mindfulAppData = JSON.parse(localStorage.getItem('mindfulAppData')) || {};
-        let currentEmoji = '';
-        let activeChallengeDay = 1;
-
         function autoResize(textarea) {
             textarea.style.height = '64px';
             textarea.style.height = (textarea.scrollHeight) + 'px';
@@ -424,10 +423,10 @@ app.get('/', (req, res) => {
                 const splash = document.getElementById('splashLoader');
                 splash.style.opacity = '0';
                 setTimeout(() => splash.style.visibility = 'hidden', 600);
-            }, 1000);
+            }, 1200);
             
             checkUser();
-            initMindfulChallengeData();
+            initMindfulChallengeData(); // Khởi tạo dữ liệu từ app gộp
         });
 
         function checkUser() {
@@ -438,7 +437,7 @@ app.get('/', (req, res) => {
             } else {
                 document.getElementById("nameModal").style.display = "flex";
             }
-            updateMindfulProgress();
+            updateStreak();
         }
 
         function saveName() {
@@ -451,6 +450,12 @@ app.get('/', (req, res) => {
             }
         }
 
+        function updateStreak() {
+            let streak = parseInt(localStorage.getItem("spotlight_streak") || "1");
+            document.getElementById("streakCount").innerText = streak;
+        }
+
+        // HỢP NHẤT HÀM SWITCH TAB
         function switchTab(evt, tabId) {
             document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
             document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
@@ -465,7 +470,7 @@ app.get('/', (req, res) => {
         }
 
         // ==========================================
-        // SPOTLIGHT API CALLS
+        // LOGIC SPOTLIGHT (Từ Code Cũ)
         // ==========================================
         async function predictAttention() {
             const event = document.getElementById("eventInput").value.trim();
@@ -495,7 +500,10 @@ app.get('/', (req, res) => {
         }
 
         function saveJournal() {
-            alert("Trang sổ hôm nay đã lưu lại thành công!");
+            let streak = parseInt(localStorage.getItem("spotlight_streak") || "1");
+            localStorage.setItem("spotlight_streak", streak + 1);
+            updateStreak();
+            alert("Trang sổ hôm nay đã lưu lại. Bạn đã làm rất tốt!");
             ["eventInput", "judgeInput", "proofInput"].forEach(id => document.getElementById(id).value = "");
             document.getElementById("aiPredictionResult").style.display = "none";
             document.querySelectorAll('textarea.notebook-input').forEach(t => t.style.height = '64px');
@@ -566,8 +574,10 @@ app.get('/', (req, res) => {
         }
 
         // ==========================================
-        // MINDFULNESS & 21-DAY CHALLENGE FIXES
+        // LOGIC MINDFUL APP (Từ file HTML Gộp)
         // ==========================================
+        
+        // -- Logic Tập Thở --
         let timerInterval, isBreathing = false;
         let breatheMinutes = parseInt(localStorage.getItem('breatheMinutes')) || 0;
         document.getElementById('stat-breathe').innerText = breatheMinutes;
@@ -603,7 +613,7 @@ app.get('/', (req, res) => {
 
             function updatePhase() {
                 textEl.innerText = breathePhases[pIndex].text;
-                outerCircle.style.transform = `scale(\${breathePhases[pIndex].scale})`;
+                outerCircle.style.transform = \`scale(\${breathePhases[pIndex].scale})\`;
                 timeLeft = breathePhases[pIndex].time;
                 timerEl.innerText = timeLeft;
             }
@@ -626,52 +636,54 @@ app.get('/', (req, res) => {
             document.getElementById('breathe-timer').innerText = '4';
         }
 
+        // -- Logic 21 Ngày Thử Thách --
+        const mindfulTasks = [
+            "Dành 15 phút đọc sách hoặc nghe podcast tích cực.",
+            "Đi dạo 20 phút mà không mang theo điện thoại.",
+            "Uống đủ 2 lít nước và ăn nhiều rau xanh hôm nay.",
+            "Viết ra 3 điều bạn cảm thấy biết ơn lúc này.",
+            "Dọn dẹp lại góc làm việc/phòng ngủ cho gọn gàng.",
+            "Nhắn tin hỏi thăm một người bạn/người thân đã lâu không gặp.",
+            "Thực hiện bài tập thở Box Breathing 5 lần."
+        ];
+
+        let mindfulAppData = JSON.parse(localStorage.getItem('mindfulAppData')) || {};
+        let currentEmoji = '';
+        
+        const mStartDate = localStorage.getItem('mStartDate') || new Date().toDateString();
+        if(!localStorage.getItem('mStartDate')) localStorage.setItem('mStartDate', mStartDate);
+        
+        const dayDiff = Math.floor((new Date() - new Date(mStartDate)) / (1000 * 60 * 60 * 24));
+        const currentMindfulDay = Math.min(dayDiff + 1, 21); 
+
         function initMindfulChallengeData() {
-            selectChallengeDay(1);
-        }
-
-        function selectChallengeDay(dayNum) {
-            activeChallengeDay = dayNum;
-            document.getElementById('current-day-label').innerText = `Ngày ${activeChallengeDay}`;
-            
-            const taskIndex = (activeChallengeDay - 1) % mindfulTasks.length;
+            document.getElementById('current-day-label').innerText = \`Ngày \${currentMindfulDay}\`;
+            const taskIndex = (new Date().getDate() + currentMindfulDay) % mindfulTasks.length;
             document.getElementById('daily-task-mindful').innerText = mindfulTasks[taskIndex];
-
-            const dayData = mindfulAppData[`day_${activeChallengeDay}`] || {};
-            document.getElementById('journal-entry').value = dayData.journal || '';
-            
-            document.querySelectorAll('.emoji').forEach(el => el.classList.remove('selected'));
-            currentEmoji = dayData.emoji || '';
-            if (currentEmoji) {
-                document.querySelectorAll('.emoji').forEach(el => {
-                    if (el.innerText.trim() === currentEmoji) el.classList.add('selected');
-                });
-            }
-
             renderMindfulTracker();
+            updateMindfulProgress();
         }
 
-        function selectEmoji(element, emoji) {
+        function selectEmoji(emoji) {
             document.querySelectorAll('.emoji').forEach(el => el.classList.remove('selected'));
-            element.classList.add('selected');
+            event.target.classList.add('selected');
             currentEmoji = emoji;
         }
 
         function saveDailyProgress() {
             const journal = document.getElementById('journal-entry').value;
-            if (!currentEmoji) return alert("Chọn 1 cảm xúc cho ngày hôm nay nhé!");
+            if (!currentEmoji) return alert("Chọn 1 cảm xúc hôm nay nhé!");
 
-            mindfulAppData[`day_${activeChallengeDay}`] = { 
-                emoji: currentEmoji, 
-                journal, 
-                completed: true,
-                updatedAt: new Date().toISOString()
-            };
+            mindfulAppData[\`day_\${currentMindfulDay}\`] = { emoji: currentEmoji, journal, completed: true };
             localStorage.setItem('mindfulAppData', JSON.stringify(mindfulAppData));
 
             const msgBox = document.getElementById('motivation-message');
-            msgBox.innerText = `Tuyệt vời! Đã ghi nhận tiến trình cho Ngày ${activeChallengeDay}.`;
+            msgBox.innerText = "Tuyệt vời! Mỗi bước đi nhỏ đều tạo nên hành trình lớn.";
             msgBox.style.display = 'block';
+
+            document.getElementById('journal-entry').value = '';
+            document.querySelectorAll('.emoji').forEach(el => el.classList.remove('selected'));
+            currentEmoji = '';
 
             renderMindfulTracker();
             updateMindfulProgress();
@@ -681,27 +693,19 @@ app.get('/', (req, res) => {
             const board = document.getElementById('tracker-board');
             board.innerHTML = '';
             for (let i = 1; i <= 21; i++) {
-                const dayData = mindfulAppData[`day_${i}`];
+                const dayData = mindfulAppData[\`day_\${i}\`];
                 const isCompleted = dayData && dayData.completed;
-                const isActive = i === activeChallengeDay;
-                
-                board.innerHTML += `
-                    <div class="tracker-day ${isCompleted ? 'completed' : ''} ${isActive ? 'active-day' : ''}" onclick="selectChallengeDay(${i})">
-                        <strong>N.${i}</strong>
-                        <span>${isCompleted ? dayData.emoji : '⚪'}</span>
-                    </div>
-                `;
+                board.innerHTML += \`<div class="tracker-day \${isCompleted ? 'completed' : ''}"><strong>N.\${i}</strong><span>\${isCompleted ? dayData.emoji : '⚪'}</span></div>\`;
             }
         }
 
         function updateMindfulProgress() {
-            const completedDays = Object.keys(mindfulAppData).filter(k => mindfulAppData[k] && mindfulAppData[k].completed).length;
+            const completedDays = Object.keys(mindfulAppData).filter(k => mindfulAppData[k].completed).length;
             const percentage = Math.min((completedDays / 21) * 100, 100);
             
             document.getElementById('main-progress').style.width = percentage + '%';
-            document.getElementById('progress-text').innerText = `${completedDays}/21 ngày`;
+            document.getElementById('progress-text').innerText = \`\${completedDays}/21 ngày\`;
             document.getElementById('stat-days').innerText = completedDays;
-            document.getElementById('streakCount').innerText = completedDays;
         }
     </script>
 </body>
