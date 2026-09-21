@@ -414,7 +414,7 @@ app.get('/', (req, res) => {
             </div>
         </div>
 
-        <!-- TAB 3: BỨC TƯỜNG ĐỒNG CẢM (CÓ HÌNH CHIM CÁNH CỤT CẦU THƯ TRONG SUỐT Ở CHÍNH GIỮA) -->
+        <!-- TAB 3: BỨC TƯỜNG ĐỒNG CẢM -->
         <div id="wall" class="tab-content">
             <div class="notebook-card">
                 <div class="card-title">Chia sẻ câu chuyện của bạn</div>
@@ -423,7 +423,6 @@ app.get('/', (req, res) => {
             </div>
 
             <div class="wall-wrapper-bg">
-                <!-- Hình chim cánh cụt cầm thư fit giữa khung chat/wall (Opacity transparent 0.15) -->
                 <img src="1789915316422_299025560367026467_299025560367026467_n.jpg" class="wall-watermark-center" alt="Penguin Letter">
                 <div id="wallPostsContainer"></div>
             </div>
@@ -473,7 +472,7 @@ app.get('/', (req, res) => {
             </div>
         </div>
 
-        <!-- TAB 6: THỬ THÁCH 21 NGÀY (CÓ BACKGROUND WATERMARK & EMOJI CÁNH CỤT ĐẶC BIỆT) -->
+        <!-- TAB 6: THỬ THÁCH 21 NGÀY -->
         <div id="challenge21" class="tab-content tab-watermark-bg">
             <h2 style="color:var(--primary-dark); margin-bottom:15px;">Mindful 21 Ngày</h2>
             <div class="mindful-card">
@@ -489,7 +488,6 @@ app.get('/', (req, res) => {
                         <span class="emoji" onclick="selectEmoji('😕')">😕</span>
                         <span class="emoji" onclick="selectEmoji('😐')">😐</span>
                         <span class="emoji" onclick="selectEmoji('🙂')">🙂</span>
-                        <!-- EMOJI ĐẶC BIỆT: Hình chim cánh cụt happy -->
                         <span class="emoji" onclick="selectEmoji('🐧')">
                             <img src="1789915299317_299025560367026467_299025560367026467_n.jpg" style="width: 34px; height: 34px; border-radius: 50%; object-fit: cover;" alt="Penguin Emoji">
                         </span>
@@ -712,11 +710,10 @@ app.get('/', (req, res) => {
 
             function updatePhase() {
                 textEl.innerText = breathePhases[pIndex].text;
-                outerCircle.style.transform = `scale(${breathePhases[pIndex].scale})`;
+                outerCircle.style.transform = "scale(" + breathePhases[pIndex].scale + ")";
                 timeLeft = breathePhases[pIndex].time;
                 timerEl.innerText = timeLeft;
             }
-
             updatePhase();
 
             timerInterval = setInterval(() => {
@@ -758,7 +755,7 @@ app.get('/', (req, res) => {
         const currentMindfulDay = Math.min(dayDiff + 1, 21); 
 
         function initMindfulChallengeData() {
-            document.getElementById('current-day-label').innerText = `Ngày ${currentMindfulDay}`;
+            document.getElementById('current-day-label').innerText = 'Ngày ' + currentMindfulDay;
             const taskIndex = (new Date().getDate() + currentMindfulDay) % mindfulTasks.length;
             document.getElementById('daily-task-mindful').innerText = mindfulTasks[taskIndex];
             renderMindfulTracker();
@@ -780,7 +777,7 @@ app.get('/', (req, res) => {
             if (!currentEmoji) return alert("Chọn 1 cảm xúc hôm nay nhé!");
 
             const displayEmoji = currentEmoji === '🐧' ? '🐧' : currentEmoji;
-            mindfulAppData[`day_${currentMindfulDay}`] = { emoji: displayEmoji, journal, completed: true };
+            mindfulAppData['day_' + currentMindfulDay] = { emoji: displayEmoji, journal, completed: true };
             localStorage.setItem('mindfulAppData', JSON.stringify(mindfulAppData));
 
             const msgBox = document.getElementById('motivation-message');
@@ -799,9 +796,9 @@ app.get('/', (req, res) => {
             const board = document.getElementById('tracker-board');
             board.innerHTML = '';
             for (let i = 1; i <= 21; i++) {
-                const dayData = mindfulAppData[`day_${i}`];
+                const dayData = mindfulAppData['day_' + i];
                 const isCompleted = dayData && dayData.completed;
-                board.innerHTML += `<div class="tracker-day ${isCompleted ? 'completed' : ''}"><strong>N.${i}</strong><span>${isCompleted ? dayData.emoji : '⚪'}</span></div>`;
+                board.innerHTML += '<div class="tracker-day ' + (isCompleted ? 'completed' : '') + '"><strong>N.' + i + '</strong><span>' + (isCompleted ? dayData.emoji : '⚪') + '</span></div>';
             }
         }
 
@@ -810,7 +807,7 @@ app.get('/', (req, res) => {
             const percentage = Math.min((completedDays / 21) * 100, 100);
             
             document.getElementById('main-progress').style.width = percentage + '%';
-            document.getElementById('progress-text').innerText = `${completedDays}/21 ngày`;
+            document.getElementById('progress-text').innerText = completedDays + '/21 ngày';
             document.getElementById('stat-days').innerText = completedDays;
         }
     </script>
