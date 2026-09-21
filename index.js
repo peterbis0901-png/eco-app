@@ -712,10 +712,12 @@ app.get('/', (req, res) => {
 
             function updatePhase() {
                 textEl.innerText = breathePhases[pIndex].text;
-                outerCircle.style.transform = \`scale(\${breathePhases[pIndex].scale})\`;
+                outerCircle.style.transform = `scale(${breathePhases[pIndex].scale})`;
                 timeLeft = breathePhases[pIndex].time;
                 timerEl.innerText = timeLeft;
-             updatePhase();
+            }
+
+            updatePhase();
 
             timerInterval = setInterval(() => {
                 timeLeft--;
@@ -756,7 +758,7 @@ app.get('/', (req, res) => {
         const currentMindfulDay = Math.min(dayDiff + 1, 21); 
 
         function initMindfulChallengeData() {
-            document.getElementById('current-day-label').innerText = \`Ngày \${currentMindfulDay}\`;
+            document.getElementById('current-day-label').innerText = `Ngày ${currentMindfulDay}`;
             const taskIndex = (new Date().getDate() + currentMindfulDay) % mindfulTasks.length;
             document.getElementById('daily-task-mindful').innerText = mindfulTasks[taskIndex];
             renderMindfulTracker();
@@ -778,7 +780,7 @@ app.get('/', (req, res) => {
             if (!currentEmoji) return alert("Chọn 1 cảm xúc hôm nay nhé!");
 
             const displayEmoji = currentEmoji === '🐧' ? '🐧' : currentEmoji;
-            mindfulAppData[\`day_\${currentMindfulDay}\`] = { emoji: displayEmoji, journal, completed: true };
+            mindfulAppData[`day_${currentMindfulDay}`] = { emoji: displayEmoji, journal, completed: true };
             localStorage.setItem('mindfulAppData', JSON.stringify(mindfulAppData));
 
             const msgBox = document.getElementById('motivation-message');
@@ -797,9 +799,9 @@ app.get('/', (req, res) => {
             const board = document.getElementById('tracker-board');
             board.innerHTML = '';
             for (let i = 1; i <= 21; i++) {
-                const dayData = mindfulAppData[\`day_\${i}\`];
+                const dayData = mindfulAppData[`day_${i}`];
                 const isCompleted = dayData && dayData.completed;
-                board.innerHTML += \`<div class="tracker-day \${isCompleted ? 'completed' : ''}"><strong>N.\${i}</strong><span>\${isCompleted ? dayData.emoji : '⚪'}</span></div>\`;
+                board.innerHTML += `<div class="tracker-day ${isCompleted ? 'completed' : ''}"><strong>N.${i}</strong><span>${isCompleted ? dayData.emoji : '⚪'}</span></div>`;
             }
         }
 
@@ -808,7 +810,7 @@ app.get('/', (req, res) => {
             const percentage = Math.min((completedDays / 21) * 100, 100);
             
             document.getElementById('main-progress').style.width = percentage + '%';
-            document.getElementById('progress-text').innerText = \`\${completedDays}/21 ngày\`;
+            document.getElementById('progress-text').innerText = `${completedDays}/21 ngày`;
             document.getElementById('stat-days').innerText = completedDays;
         }
     </script>
