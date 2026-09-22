@@ -209,70 +209,72 @@ app.get('/', (req, res) => {
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .splash-msg { color: var(--text); font-family: 'Lora', serif; font-style: italic; text-align: center; max-width: 80%; font-size: 1.1rem; }
 
-        header { background: #fff; padding: 1.5rem 1rem; text-align: center; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border-bottom: 2px solid var(--light-blue); }
+        header { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(4px); padding: 1.5rem 1rem; text-align: center; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border-bottom: 2px solid var(--light-blue); }
         .app-title { font-size: 1.6rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; justify-content: center; gap: 8px; letter-spacing: -0.5px; }
         .slogan { font-size: 0.95rem; color: var(--text-muted); margin-top: 6px; font-style: italic; font-family: 'Lora', serif; }
         
-        .container { max-width: 700px; margin: 1.5rem auto; padding: 0 1rem; }
+        .container { max-width: 700px; margin: 1.5rem auto; padding: 0 1rem; position: relative; z-index: 1; }
         
-        .user-bar { background: #fff; padding: 1rem 1.2rem; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.02); border: 1px solid var(--light-blue); }
+        .user-bar { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(2px); padding: 1rem 1.2rem; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.02); border: 1px solid var(--light-blue); }
         .streak-badge { background: #fff5f7; color: var(--primary); border: 1px solid var(--primary-light); padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; }
         
         /* Navigation Tabs */
         .nav-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.5rem; justify-content: center; }
-        .tab-btn { background: #fff; border: 1px solid var(--light-blue); padding: 0.65rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700; cursor: pointer; color: var(--text-muted); transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .tab-btn { background: rgba(255, 255, 255, 0.9); border: 1px solid var(--light-blue); padding: 0.65rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700; cursor: pointer; color: var(--text-muted); transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(226, 115, 150, 0.3); }
         
-        /* CONTAINER CHO CÁC TAB - THÊM BACKGROUND WATERMARK TRONG SUỐT */
+        /* CONTAINER CHO CÁC TAB - WATERMARK PHÓNG TO & NẰM CHÍNH TÂM MÀN HÌNH */
         .tab-content { display: none; animation: fadeIn 0.4s ease; position: relative; border-radius: 16px; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Background watermark cho 5 Tab được chỉ định */
+        /* Background watermark chú chim cánh cụt ngay tâm màn hình */
         .tab-watermark-bg::before {
             content: '';
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 260px;
-            height: 260px;
+            width: 450px;
+            height: 450px;
+            max-width: 90vw;
+            max-height: 90vh;
             background-image: url('1789915182260_299025560367026467_299025560367026467_n.jpg');
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
-            opacity: 0.12; /* Transparent không che mờ chữ */
+            opacity: 0.35; /* Độ trong suốt vừa phải để hiện rõ hình phía sau */
             pointer-events: none;
             z-index: 0;
         }
 
-        /* Sổ tay Phản tư */
-        .notebook-card { background: var(--paper); border-radius: 8px; padding: 2rem 2rem 2rem 3rem; margin-bottom: 1.5rem; box-shadow: 2px 4px 15px rgba(0,0,0,0.05); position: relative; background-image: repeating-linear-gradient(transparent, transparent 31px, var(--line-color) 31px, var(--line-color) 32px); background-attachment: local; background-position: 0 2.5rem; z-index: 1; }
+        /* Sổ tay Phản tư (ĐÃ LÀM TRONG SUỐT NỀN - GIỮ NGUYÊN KẺ HÀNG NÓTЕBOOK) */
+        .notebook-card { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(2px); border-radius: 8px; padding: 2rem 2rem 2rem 3rem; margin-bottom: 1.5rem; box-shadow: 2px 4px 15px rgba(0,0,0,0.05); position: relative; background-image: repeating-linear-gradient(transparent, transparent 31px, var(--line-color) 31px, var(--line-color) 32px); background-attachment: local; background-position: 0 2.5rem; z-index: 1; }
         .notebook-card::before { content: ''; position: absolute; top: 0; bottom: 0; left: 2rem; width: 2px; background: var(--margin-line); }
-        .card-title { font-size: 1.1rem; font-weight: 700; color: var(--primary); margin-bottom: 1rem; display: inline-block; background: #fff; padding: 0 5px; position: relative; z-index: 2; }
+        .card-title { font-size: 1.1rem; font-weight: 700; color: var(--primary); margin-bottom: 1rem; display: inline-block; background: rgba(255, 255, 255, 0.85); padding: 0 5px; position: relative; z-index: 2; border-radius: 4px; }
         .notebook-input { width: 100%; background: transparent; border: none; font-size: 1rem; line-height: 32px; resize: none; outline: none; font-family: 'Lora', serif; color: #1f2937; padding: 0; min-height: 64px; overflow: hidden; position: relative; z-index: 2; }
         .notebook-input::placeholder { color: #9ca3af; font-style: italic; }
         
-        .slider-container { background: #fff; padding: 1rem; border-radius: 12px; border: 1px dashed var(--accent); margin: 1rem 0; position: relative; z-index: 2; text-align: center; }
+        .slider-container { background: rgba(255, 255, 255, 0.75); padding: 1rem; border-radius: 12px; border: 1px dashed var(--accent); margin: 1rem 0; position: relative; z-index: 2; text-align: center; }
         .slider-val { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
         input[type="range"] { width: 100%; accent-color: var(--primary); margin-top: 10px; }
         
         .btn { width: 100%; padding: 1rem; border: none; border-radius: 12px; background: var(--primary); color: #fff; font-weight: 700; cursor: pointer; transition: transform 0.2s; font-size: 1rem; position: relative; z-index: 2; margin-bottom: 10px; }
         .btn:active { transform: scale(0.98); }
         
-        .ai-result-box { display: none; margin-top: 1rem; background: var(--primary-light); border-left: 4px solid var(--primary); padding: 1.2rem; border-radius: 0 8px 8px 0; font-size: 0.95rem; color: var(--primary-dark); line-height: 1.6; position: relative; z-index: 2; font-family: 'Lora', serif; }
-        .reframe-item { background: #fff; padding: 0.6rem 0.8rem; border-radius: 6px; margin-top: 6px; font-size: 0.9rem; color: var(--text); }
+        .ai-result-box { display: none; margin-top: 1rem; background: rgba(239, 207, 227, 0.85); border-left: 4px solid var(--primary); padding: 1.2rem; border-radius: 0 8px 8px 0; font-size: 0.95rem; color: var(--primary-dark); line-height: 1.6; position: relative; z-index: 2; font-family: 'Lora', serif; }
+        .reframe-item { background: rgba(255, 255, 255, 0.9); padding: 0.6rem 0.8rem; border-radius: 6px; margin-top: 6px; font-size: 0.9rem; color: var(--text); }
 
-        /* AI Chatbot & Wall */
-        .chat-challenge-banner { background: linear-gradient(135deg, var(--primary), var(--accent)); border-radius: 16px; padding: 1.5rem; color: #fff; margin-bottom: 1.5rem; box-shadow: 0 4px 15px rgba(226, 115, 150, 0.3); position: relative; z-index: 1; }
+        /* AI Chatbot & Wall (ĐÃ LÀM TRONG SUỐT KHUNG CHAT) */
+        .chat-challenge-banner { background: linear-gradient(135deg, rgba(226, 115, 150, 0.9), rgba(235, 154, 178, 0.9)); border-radius: 16px; padding: 1.5rem; color: #fff; margin-bottom: 1.5rem; box-shadow: 0 4px 15px rgba(226, 115, 150, 0.3); position: relative; z-index: 1; }
         .challenge-q { font-size: 1.1rem; font-weight: 700; font-family: 'Lora', serif; font-style: italic; margin-top: 0.5rem; line-height: 1.5; }
-        .chat-wrapper { background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid var(--light-blue); position: relative; z-index: 1; }
-        .chat-box { height: 320px; overflow-y: auto; padding: 1.5rem; background: #fffdfd; }
+        .chat-wrapper { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(2px); border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid var(--light-blue); position: relative; z-index: 1; }
+        .chat-box { height: 320px; overflow-y: auto; padding: 1.5rem; background: rgba(255, 255, 255, 0.4); }
         .chat-msg { margin-bottom: 1rem; max-width: 85%; padding: 0.8rem 1rem; border-radius: 16px; font-size: 0.95rem; line-height: 1.5; }
-        .chat-msg.bot { background: var(--primary-light); border: 1px solid var(--accent); color: var(--text); border-bottom-left-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .chat-msg.bot { background: rgba(239, 207, 227, 0.85); border: 1px solid var(--accent); color: var(--text); border-bottom-left-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .chat-msg.user { background: var(--primary); color: #fff; margin-left: auto; border-bottom-right-radius: 4px; }
-        .chat-input-area { display: flex; padding: 1rem; background: #fff; border-top: 1px solid #f3f4f6; gap: 10px; }
-        .chat-input-area input { flex: 1; border: 1px solid var(--light-blue); border-radius: 20px; padding: 0 1.2rem; font-size: 0.95rem; outline: none; }
+        .chat-input-area { display: flex; padding: 1rem; background: rgba(255, 255, 255, 0.85); border-top: 1px solid #f3f4f6; gap: 10px; }
+        .chat-input-area input { flex: 1; border: 1px solid var(--light-blue); border-radius: 20px; padding: 0 1.2rem; font-size: 0.95rem; outline: none; background: rgba(255, 255, 255, 0.9); }
         .chat-input-area button { width: auto; padding: 0.8rem 1.5rem; border-radius: 20px; }
 
         /* TAB ĐỒNG CẢM: WATERMARK HÌNH CHIM CÁNH CỤT CẦU THƯ */
@@ -282,23 +284,23 @@ app.get('/', (req, res) => {
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 220px;
-            max-width: 75%;
-            opacity: 0.15; /* Transparent giữ chữ luôn rõ nét */
+            width: 320px;
+            max-width: 85%;
+            opacity: 0.25; /* Trong suốt để thấy chữ bên trên */
             pointer-events: none;
             z-index: 0;
         }
 
-        .wall-post-card { background: #fff; border-radius: 12px; padding: 1.2rem; margin-bottom: 1rem; border: 1px solid var(--light-blue); box-shadow: 0 2px 8px rgba(0,0,0,0.02); position: relative; z-index: 1; }
+        .wall-post-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(2px); border-radius: 12px; padding: 1.2rem; margin-bottom: 1rem; border: 1px solid var(--light-blue); box-shadow: 0 2px 8px rgba(0,0,0,0.02); position: relative; z-index: 1; }
         .wall-author { font-size: 0.85rem; font-weight: 700; color: var(--primary); display: flex; justify-content: space-between; }
         .wall-text { font-size: 0.95rem; margin-top: 6px; font-family: 'Lora', serif; color: var(--text); line-height: 1.5; }
 
-        /* MINDFUL APP STYLES */
-        .mindful-card { background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; position: relative; z-index: 1; border: 1px solid var(--light-blue); }
+        /* MINDFUL APP STYLES (ĐÃ LÀM TRONG SUỐT CARD) */
+        .mindful-card { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(2px); padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; position: relative; z-index: 1; border: 1px solid var(--light-blue); }
         .progress-bar-container { background: #e0e0e0; border-radius: 10px; height: 20px; width: 100%; overflow: hidden; margin-top: 10px; }
         .progress-bar { background: var(--primary); height: 100%; width: 0%; transition: width 0.5s ease; }
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; position: relative; z-index: 1; }
-        .stat-box { text-align: center; padding: 20px; background: var(--primary-light); border-radius: 10px; }
+        .stat-box { text-align: center; padding: 20px; background: rgba(239, 207, 227, 0.85); border-radius: 10px; }
         .stat-box h3 { font-size: 30px; color: var(--primary-dark); }
         
         /* Tập Thở CSS */
@@ -311,19 +313,19 @@ app.get('/', (req, res) => {
         .btn-mindful:hover { background: var(--primary-dark); }
         
         /* Thử thách 21 Ngày CSS */
-        .challenge-box { background: var(--primary-light); padding: 15px; border-left: 5px solid var(--primary); margin-bottom: 20px; border-radius: 4px; }
-        .journal-form textarea { width: 100%; height: 100px; padding: 10px; border: 1px solid var(--light-blue); border-radius: 5px; resize: none; margin-bottom: 15px; font-family: 'Nunito', sans-serif;}
+        .challenge-box { background: rgba(239, 207, 227, 0.85); padding: 15px; border-left: 5px solid var(--primary); margin-bottom: 20px; border-radius: 4px; }
+        .journal-form textarea { width: 100%; height: 100px; padding: 10px; border: 1px solid var(--light-blue); border-radius: 5px; resize: none; margin-bottom: 15px; font-family: 'Nunito', sans-serif; background: rgba(255, 255, 255, 0.85); }
         .emoji-selector { display: flex; gap: 15px; margin-bottom: 15px; font-size: 30px; justify-content: center; align-items: center; cursor: pointer; }
         .emoji { opacity: 0.4; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
         .emoji.selected, .emoji:hover { opacity: 1; transform: scale(1.2); }
         .tracker-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-top: 20px; }
-        .tracker-day { background: #f0f0f0; border-radius: 5px; padding: 10px; text-align: center; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .tracker-day.completed { background: var(--primary-light); border: 1px solid var(--primary); }
-        .message-box { display: none; background: #e3f2fd; color: #1565c0; padding: 15px; border-radius: 5px; margin-top: 15px; text-align: center; font-style: italic; }
+        .tracker-day { background: rgba(240, 240, 240, 0.85); border-radius: 5px; padding: 10px; text-align: center; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .tracker-day.completed { background: rgba(239, 207, 227, 0.85); border: 1px solid var(--primary); }
+        .message-box { display: none; background: rgba(227, 242, 253, 0.9); color: #1565c0; padding: 15px; border-radius: 5px; margin-top: 15px; text-align: center; font-style: italic; }
 
         /* Modal Đăng nhập */
         #nameModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 100; }
-        .modal-box { background: #fff; padding: 2.5rem 2rem; border-radius: 24px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 2px solid var(--primary-light); }
+        .modal-box { background: rgba(255, 255, 255, 0.95); padding: 2.5rem 2rem; border-radius: 24px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 2px solid var(--primary-light); }
         .modal-box input { width: 100%; padding: 1rem; border: 2px solid var(--light-blue); border-radius: 12px; font-size: 1rem; margin: 1.5rem 0; outline: none; text-align: center; }
     </style>
 </head>
